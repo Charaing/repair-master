@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b1f24">
+<title>REPAIR MASTER — 전자기기 사설 수리점 시뮬레이터</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-screen="shop">
+<svg id="gdefs" width="0" height="0" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg>
+
+<header id="hud">
+  <div class="logo"><b>REPAIR</b>MASTER</div>
+  <div class="hud-stat"><span id="hudDay"></span><b id="hudTime"></b></div>
+  <div class="hud-stat money"><span>매장 자금</span><b id="hudMoney"></b></div>
+  <div class="hud-stat"><span>평판</span><b id="hudRep"></b></div>
+  <div class="hud-stat lv"><span>직급</span><b id="hudLv"></b></div>
+  <div id="hudAlerts"></div>
+  <div class="hud-btns"><button id="btnWait" title="30분 기다리기">⏱<span>30분</span></button><button id="btnEnd" title="영업 종료">🌙<span>마감</span></button><button id="btnMenu" title="메뉴">☰</button></div>
+</header>
+
+<main id="shop" class="screen"><div id="sceneWrap"><svg id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <p class="scene-hint">물건을 클릭해 보세요 — 접수대 · 작업대 · 컴퓨터 · 교과서 · 부품 보관함 · 택배 · 선임</p></main>
+
+<section id="bench" class="screen hidden">
+  <div class="bench-top"><div id="benchInfo"></div><div class="bt-btns"><button class="btn sm" id="btnBenchBook">📖 교과서</button><button class="btn sm" id="btnBenchStock">📦 재고</button><button class="btn sm" id="btnBenchClose">✕ 작업대 나가기</button></div></div>
+  <div class="bench-body">
+    <nav id="toolRail"></nav>
+    <div id="stage"><div class="mat"></div><svg id="devSvg" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="stage-ctrl"><button id="btnFlip" class="btn" title="앞면/뒷면 뒤집기">⟲ 뒤집기</button><button id="btnEdge" class="btn" title="폰을 세워 아랫면(충전 포트 쪽) 보기">⤵ 아랫면</button><span id="sideLabel"></span><button id="btnZin" class="btn">＋</button><button id="btnZout" class="btn">－</button><button id="btnFit" class="btn">⤢</button></div>
+      <div id="stageMsg" class="stage-msg"></div>
+      <button id="btnSheet" class="btn sheet-toggle">☰ 패널</button>
+    </div>
+    <aside id="benchSide"><div id="benchTabs"><button data-tab="tray">🧺 트레이</button><button data-tab="diag">🩺 진단</button><button data-tab="info">ℹ 정보</button><button data-tab="ticket">📋 의뢰</button></div><div id="benchPanel"></div></aside>
+  </div>
+</section>
+
+<section id="computer" class="screen hidden"><div class="monitor"><div id="desktop"></div></div></section>
+
+<section id="book" class="screen hidden">
+  <div class="book-wrap"><div class="book"><div class="page left" id="bookLeft"></div><div class="spine"></div><div class="page right" id="bookRight"></div></div>
+    <div class="book-ctrl"><button class="btn" id="bkIndexBtn">☰ 목차</button><button class="btn" id="bkPrev">◀</button><button class="btn" id="bkNext">▶</button><button class="btn" id="bkClose">✕ 책 덮기</button></div></div>
+</section>
+
+<div id="tutCard" class="hidden"></div>
+<div id="modalRoot"></div>
+<div id="toasts"></div>
+<div id="tooltip"></div>
+<noscript>이 게임은 JavaScript가 필요합니다.</noscript>
+
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/render.js"></script>
+<script src="js/workbench.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/computer.js"></script>
+<script src="js/book.js"></script>
+<script src="js/tutorial.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
