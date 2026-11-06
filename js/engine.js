@@ -79,6 +79,8 @@ function processTime() {
     arrived.forEach(a => { a.cust.arriveT = a.t; a.cust.leaveT = a.t + 200; S.queue.push(a.cust); Bus.emit('toast', { icon: '🔔', text: a.cust.name + ' 님이 방문했습니다.' }); });
     Bus.emit('queue');
   }
+  // 워크인 손님: 영업 시간에 예약된 손님도, 기다리는 손님도 없으면 잠시 뒤 새 손님이 들른다
+  walkIn();
   // 기다리다 떠난 손님
   const left = S.queue.filter(c => !c.tutorial && c.leaveT < S.t);
   if (left.length) {
@@ -824,6 +826,18 @@ function closeTicket(tk, forceFail) {
   return { rec, success, paid, sat, fb };
 }
 
+function walkIn() {
+  if (S.tut.active && !S.tut.done) return;
+  const m = minOfDay(), d = dayIdx();
+  if (m < OPEN || m > 17 * 60 + 30) return;
+  if (S.queue.some(c => !c.tutorial)) return;
+  if (S.arrivals.some(a => dayIdx(a.t) === d)) return;
+  if (S.tickets.length >= shelfCap()) return;
+  S.flags.walkins = S.flags.walkins || {};
+  if ((S.flags.walkins[d] || 0) >= 4) return;
+  S.flags.walkins[d] = (S.flags.walkins[d] || 0) + 1;
+  S.arrivals.push({ t: Math.min(d * DAY + 17 * 60 + 40, S.t + R.int(20, 70)), cust: genCustomer() });
+}
 /* ---------- 하루 처리 ---------- */
 function scheduleDay() {
   const d = dayIdx();
@@ -878,7 +892,7 @@ function endDay() {
   updateMarket(false);
   sum.notes.push('부품 시세가 변동되었습니다.');
   S.tickets.forEach(tk => { if (tk.deadlineT < S.t && !tk.lateWarned) { tk.lateWarned = true; S.rep = clamp(S.rep - 0.1, 0, 5); sum.notes.push('⏰ ' + tk.cust.name + ' 님 수리 기한이 지났습니다. 고객이 전화로 항의했습니다.'); } });
-  if (!S.tut.active || S.tut.done) scheduleDay();
+  scheduleDay(); // 튜토리얼 진행 중이어도 다음 날 손님은 온다
   if (S.money < 0) sum.notes.push('⚠ 매장 자금이 마이너스입니다! 사장님이 걱정하고 있습니다.');
   sum.money = S.money; sum.rep = S.rep;
   save();
