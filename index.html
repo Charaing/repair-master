@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1b1f24">
 <title>REPAIR MASTER — 전자기기 사설 수리점 시뮬레이터</title>
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body data-screen="shop">
 <svg id="gdefs" width="0" height="0" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg>
@@ -24,7 +24,7 @@
   <p class="scene-hint">물건을 클릭해 보세요 — 접수대 · 작업대 · 컴퓨터 · 교과서 · 부품 보관함 · 택배 · 선임</p></main>
 
 <section id="bench" class="screen hidden">
-  <div class="bench-top"><div id="benchInfo"></div><div class="bt-btns"><button class="btn sm" id="btnBenchBook">📖 교과서</button><button class="btn sm" id="btnBenchStock">📦 재고</button><button class="btn sm" id="btnBenchClose">✕ 작업대 나가기</button></div></div>
+  <div class="bench-top"><div id="benchInfo"></div><div class="bt-btns"><button class="btn sm" id="btnBenchSwitch" title="작업대에 올린 기기를 다른 의뢰 기기로 바꿉니다">🔄 기기 바꾸기</button><button class="btn sm" id="btnBenchBook">📖 교과서</button><button class="btn sm" id="btnBenchStock">📦 재고</button><button class="btn sm" id="btnBenchClose">✕ 작업대 나가기</button></div></div>
   <div class="bench-body">
     <nav id="toolRail"></nav>
     <div id="stage"><div class="mat"></div><svg id="devSvg" preserveAspectRatio="xMidYMid meet"></svg>
@@ -49,14 +49,15 @@
 <div id="tooltip"></div>
 <noscript>이 게임은 JavaScript가 필요합니다.</noscript>
 
-<script src="js/data.js?v=5"></script>
-<script src="js/engine.js?v=5"></script>
-<script src="js/render.js?v=5"></script>
-<script src="js/workbench.js?v=5"></script>
-<script src="js/ui.js?v=5"></script>
-<script src="js/computer.js?v=5"></script>
-<script src="js/book.js?v=5"></script>
-<script src="js/tutorial.js?v=5"></script>
-<script src="js/main.js?v=5"></script>
+<script src="js/data.js?v=7"></script>
+<script src="js/engine.js?v=7"></script>
+<script src="js/render.js?v=7"></script>
+<script src="js/workbench.js?v=7"></script>
+<script src="js/ui.js?v=7"></script>
+<script src="js/computer.js?v=7"></script>
+<script src="js/bank.js?v=7"></script>
+<script src="js/book.js?v=7"></script>
+<script src="js/tutorial.js?v=7"></script>
+<script src="js/main.js?v=7"></script>
 </body>
 </html>

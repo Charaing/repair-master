@@ -317,7 +317,54 @@ const PART_TYPES = {
     devices: '노트북, 데스크톱 (현재 버전 미구현)'
   }
 };
-const BOOK_ORDER = ['display_oled','display_lcd','battery','mainboard','soc','ram','storage','pmic','shield','back_glass','back_cover','midplate','camera_rear','camera_front','charge_port','flex_cable','speaker','earpiece','microphone','vibration','button_flex','antenna','coil','heatsink','fan','ssd'];
+/* 게임 컨트롤러 전용 부품 */
+Object.assign(PART_TYPES, {
+  pad_stick: {
+    name: '아날로그 스틱 모듈', en: 'Analog Thumbstick Module', cat: '입력',
+    short: '엄지로 기울이는 조이스틱. 축마다 달린 가변저항(포텐셔미터)이 기울어진 정도를 전압으로 바꿔 보낸다.',
+    roles: ['X축·Y축 기울기를 0~100% 아날로그 값으로 전달', '스틱을 꾹 누르면 클릭 버튼(L3/R3) 역할', '스프링으로 손을 떼면 중앙으로 복귀'],
+    location: '컨트롤러 앞면 왼쪽 위(L)·오른쪽 아래(R). 뒷면을 열면 메인보드 위에 모듈이 고정되어 있다.',
+    symptoms: ['손을 떼도 캐릭터가 혼자 움직임(드리프트)', '한 방향으로만 입력이 약함', '스틱 클릭이 안 눌림'],
+    relations: '전용 커넥터로 메인보드에 연결(게임 속 가상 설계: 교체형 모듈). 실제 많은 제품은 보드에 납땜되어 있어 교체가 더 어렵다.',
+    diagnose: '입력 검사로 손을 뗀 상태의 중앙값을 확인한다. 중앙값이 0에서 크게 벗어나면 저항 트랙 마모(드리프트)다.',
+    caution: '모듈을 들어 올리기 전 커넥터를 먼저 분리할 것. 저항 트랙은 손으로 만지지 않는다.',
+    devices: '게임 컨트롤러(케스트렐 G1), 향후: 휴대용 게임기'
+  },
+  pad_trigger: {
+    name: '트리거 모듈', en: 'Trigger Module', cat: '입력',
+    short: '검지로 당기는 아날로그 버튼. 스프링과 각도 센서로 얼마나 깊이 당겼는지 측정한다.',
+    roles: ['당긴 깊이를 0~100%로 전달(가속·조준 등)', '복귀 스프링이 손을 떼면 원위치'],
+    location: '컨트롤러 윗면 양쪽. 뒷면 쉘을 열면 위쪽 모서리에 나사 2개로 고정되어 있다.',
+    symptoms: ['눌린 채로 올라오지 않음', '헐렁하고 반응이 없음', '끝까지 당겨도 값이 다 안 올라감'],
+    relations: '전용 커넥터로 메인보드와 연결. 낙하 충격을 가장 먼저 받는 부품.',
+    diagnose: '입력 검사에서 트리거 값이 복귀하지 않거나 튀면 스프링 이탈·센서 손상을 의심. 아랫면이 아니라 윗면(⤴) 보기로 외관을 확인할 수 있다.',
+    caution: '스프링이 튀어 나가지 않게 천천히 분리한다.',
+    devices: '게임 컨트롤러(케스트렐 G1)'
+  },
+  pad_membrane: {
+    name: '버튼 멤브레인(러버 돔)', en: 'Button Membrane', cat: '입력',
+    short: '버튼 아래에 깔린 고무 시트. 누르면 고무 돔 안쪽의 전도 패드가 기판에 닿아 신호가 들어간다.',
+    roles: ['A·B·X·Y·방향키·홈 버튼 입력', '고무 돔의 탄성으로 버튼이 다시 올라옴'],
+    location: '메인보드 바로 아래(앞면 쪽). 메인보드를 들어내야 꺼낼 수 있다.',
+    symptoms: ['버튼을 여러 번 눌러야 겨우 반응', '특정 버튼만 무반응', '홈 버튼이 안 눌려 전원이 안 켜짐'],
+    relations: '멤브레인 커넥터로 메인보드와 연결. 음료를 쏟으면 끈적임·부식으로 여러 버튼이 함께 고장 나기 쉽다.',
+    diagnose: '입력 검사·하드웨어 자가진단에서 어떤 버튼이 안 되는지 확인. 여러 버튼이 한꺼번에 이상하면 멤브레인 전체를 의심.',
+    caution: '전도 패드 면을 손으로 만지면 유분 때문에 접촉이 나빠진다.',
+    devices: '게임 컨트롤러, 리모컨, 키보드'
+  },
+  pad_shell_back: {
+    name: '컨트롤러 뒷면 쉘', en: 'Rear Shell', cat: '외관',
+    short: '컨트롤러 뒤쪽 플라스틱 외장. 나사 5개와 플라스틱 클립 6개로 앞면 쉘과 맞물려 있다.',
+    roles: ['내부 부품 보호', '손잡이(그립) 형태 제공', '모델명·일련번호 표시'],
+    location: '기기 뒷면 전체.',
+    symptoms: ['낙하로 금이 감', '배터리 팽창으로 틈이 벌어짐'],
+    relations: '나사를 모두 푼 뒤 오프닝 픽으로 테두리 클립을 하나씩 풀어야 열린다.',
+    diagnose: '외관 점검. 틈이 벌어졌다면 내부 배터리 팽창을 의심.',
+    caution: '클립을 억지로 비틀면 부러진다. 나사부터 모두 풀 것.',
+    devices: '게임 컨트롤러(케스트렐 G1)'
+  }
+});
+const BOOK_ORDER = ['display_oled','display_lcd','battery','mainboard','soc','ram','storage','pmic','shield','back_glass','back_cover','midplate','camera_rear','camera_front','charge_port','flex_cable','speaker','earpiece','microphone','vibration','button_flex','antenna','coil','heatsink','pad_stick','pad_trigger','pad_membrane','pad_shell_back','fan','ssd'];
 
 /* -------------------------------------------------------------------------
    기기 모델 — 좌표계: 본체 360 x 760. side별 좌표(앞면/뒷면은 각자 보이는 그대로)
@@ -484,19 +531,125 @@ const MODELS = {
     edge: { t: 38, spk: [222, 306], mic: [70, 96], micN: 2, jack: 40 }
   }
 };
-const MODEL_IDS = ['lumen', 'pixis', 'nova'];
+/* ---- 추가 모델: 오르빗 M7 (스마트폰) ---- */
+MODELS.orbit = {
+  id: 'orbit', brand: 'ORBIT', name: '오르빗 M7', code: 'OM7', tier: '중급형', year: 2024, cat: 'phone',
+  desc: '가로형 카메라 바가 특징인 중급형. 후면 글라스를 가열해 열고, 상단 차폐 브라켓 아래에 메인보드가 있다. 커넥터 배치가 노바와 달라 순서를 잘 봐야 한다.',
+  openSide: 'back', shell: { back: 'back_glass', front: 'display' },
+  style: { back: '#5b2a4a', back2: '#8c4f78', frame: '#b9a7b3', pcb: '#2a2440', accent: '#ff8fc8', camCount: 2 },
+  difficulty: 2, priceMult: 0.62, batt: '4,500',
+  slots: [
+    { id: 'mainboard', type: 'mainboard', side: 'back', z: 2, x: 40, y: 40, w: 280, h: 230, coveredBy: ['bracket_main', 'camera_rear'], screws: [[56, 172], [304, 172]],
+      chips: [{ type: 'soc', x: 112, y: 120, w: 66, h: 60 }, { type: 'ram', x: 186, y: 122, w: 40, h: 28 }, { type: 'storage', x: 186, y: 156, w: 40, h: 26 }, { type: 'pmic', x: 30, y: 150, w: 32, h: 26 }] },
+    { id: 'camera_rear', type: 'camera_rear', side: 'back', z: 3, x: 56, y: 44, w: 170, h: 62, coveredBy: ['bracket_main'] },
+    { id: 'camera_front', type: 'camera_front', side: 'back', z: 3, x: 262, y: 46, w: 22, h: 22, coveredBy: ['bracket_main'], tool: 'tweezers' },
+    { id: 'earpiece', type: 'earpiece', side: 'back', z: 3, x: 150, y: 16, w: 60, h: 18, coveredBy: ['bracket_main'], tool: 'tweezers' },
+    { id: 'antenna', type: 'antenna', side: 'back', z: 3, x: 40, y: 278, w: 44, h: 22, coveredBy: [] },
+    { id: 'button_flex', type: 'button_flex', side: 'back', z: 3, x: 334, y: 150, w: 12, h: 200, coveredBy: [] },
+    { id: 'flex_cable', type: 'flex_cable', side: 'back', z: 3, x: 300, y: 290, w: 16, h: 340, coveredBy: ['speaker'] },
+    { id: 'charge_port', type: 'charge_port', side: 'back', z: 2, x: 60, y: 640, w: 240, h: 80, coveredBy: ['speaker', 'microphone'], screws: [[72, 706], [288, 706]] },
+    { id: 'microphone', type: 'microphone', side: 'back', z: 3, x: 120, y: 690, w: 26, h: 18, coveredBy: [], tool: 'tweezers' },
+    { id: 'vibration', type: 'vibration', side: 'back', z: 3, x: 40, y: 604, w: 62, h: 28, coveredBy: [], screws: [[94, 618]] },
+    { id: 'battery', type: 'battery', side: 'back', z: 4, x: 92, y: 296, w: 200, h: 296, coveredBy: [], adhesive: { kind: 'tab' } },
+    { id: 'speaker', type: 'speaker', side: 'back', z: 4, x: 190, y: 604, w: 140, h: 86, coveredBy: [], screws: [[200, 614], [320, 614], [260, 682]] },
+    { id: 'bracket_main', type: 'shield', side: 'back', z: 5, x: 36, y: 12, w: 288, h: 108, coveredBy: [], screws: [[50, 26], [310, 26], [50, 106], [310, 106]], label: '상단 차폐 브라켓' },
+    { id: 'back_glass', type: 'back_glass', side: 'back', z: 9, x: 0, y: 0, w: 360, h: 760, coveredBy: [], adhesive: { kind: 'glue', heat: true } },
+    { id: 'display', type: 'display_oled', side: 'front', z: 9, x: 0, y: 0, w: 360, h: 760, coveredBy: [], adhesive: { kind: 'glue', heat: true } }
+  ],
+  conns: [
+    { id: 'c_batt', owner: 'battery', board: 'mainboard', side: 'back', x: 120, y: 250, w: 30, h: 12, coveredBy: [], label: '배터리 커넥터' },
+    { id: 'c_disp', owner: 'display', board: 'mainboard', side: 'back', x: 200, y: 226, w: 34, h: 14, coveredBy: [], ribbonFrom: [217, 300], label: '디스플레이 커넥터' },
+    { id: 'c_cam', owner: 'camera_rear', board: 'mainboard', side: 'back', x: 238, y: 84, w: 26, h: 12, coveredBy: ['bracket_main'], label: '후면 카메라 커넥터' },
+    { id: 'c_fcam', owner: 'camera_front', board: 'mainboard', side: 'back', x: 284, y: 76, w: 22, h: 10, coveredBy: ['bracket_main'], label: '전면 카메라 커넥터' },
+    { id: 'c_btn', owner: 'button_flex', board: 'mainboard', side: 'back', x: 300, y: 196, w: 18, h: 12, coveredBy: [], label: '버튼 플렉스 커넥터' },
+    { id: 'c_ant', owner: 'antenna', board: 'mainboard', side: 'back', x: 58, y: 236, w: 20, h: 10, coveredBy: [], label: '안테나 동축 커넥터' },
+    { id: 'c_flex1', owner: 'flex_cable', board: 'mainboard', side: 'back', x: 294, y: 252, w: 24, h: 12, coveredBy: [], label: '메인 플렉스(상단)' },
+    { id: 'c_flex2', owner: 'flex_cable', board: 'charge_port', side: 'back', x: 296, y: 646, w: 22, h: 12, coveredBy: ['speaker'], label: '메인 플렉스(하단)' },
+    { id: 'c_vib', owner: 'vibration', board: 'charge_port', side: 'back', x: 108, y: 646, w: 20, h: 12, coveredBy: [], label: '진동 모터 커넥터' }
+  ],
+  paths: {
+    battery: ['battery', 'c:c_batt'],
+    display: ['display', 'c:c_disp'], touch: ['display', 'c:c_disp'],
+    charge: ['charge_port', 'flex_cable', 'c:c_flex1', 'c:c_flex2'],
+    mic: ['microphone', 'charge_port', 'flex_cable', 'c:c_flex1', 'c:c_flex2'],
+    speaker: ['speaker', 'charge_port', 'flex_cable', 'c:c_flex1', 'c:c_flex2'],
+    vibration: ['vibration', 'c:c_vib', 'charge_port', 'flex_cable', 'c:c_flex1', 'c:c_flex2'],
+    camera_rear: ['camera_rear', 'c:c_cam'], camera_front: ['camera_front', 'c:c_fcam'],
+    earpiece: ['earpiece', 'bracket_main'],
+    buttons: ['button_flex', 'c:c_btn'],
+    signal: ['antenna', 'c:c_ant']
+  },
+  lci: { side: 'back', x: 316, y: 420 },
+  port: { side: 'back', x: 160, y: 744 },
+  edge: { t: 32, spk: [230, 306], mic: [60, 96], micN: 3 }
+};
+
+/* ---- 추가 기기: 케스트렐 G1 (무선 게임 컨트롤러) — 좌표계 480 x 320, 뒷면은 좌우가 뒤집혀 보인다 ---- */
+const PAD_PATH = 'M70 36 Q240 8 410 36 Q462 46 472 112 L476 236 Q478 304 420 312 Q378 316 354 276 L326 228 Q240 212 154 228 L126 276 Q102 316 60 312 Q2 304 4 236 L8 112 Q18 46 70 36 Z';
+MODELS.kestrel = {
+  id: 'kestrel', brand: 'KESTREL', name: '케스트렐 G1', code: 'KG1', tier: '무선 게임 컨트롤러', year: 2024, cat: 'pad',
+  desc: '무선 게임 컨트롤러. 뒷면 쉘의 나사 5개를 풀고 테두리 클립 6개를 픽으로 풀어 연다. 스틱·트리거는 교체형 모듈(게임 속 가상 설계). 충전 포트는 윗면에 있다.',
+  openSide: 'back', shell: { back: 'back_shell' }, frontFixed: true, edgeName: '윗면',
+  style: { back: '#2b2f36', back2: '#3d434c', frame: '#1f2227', face: '#e6e9ed', pcb: '#1d3a56', accent: '#ff6b3a' },
+  difficulty: 1, priceMult: 0.5, batt: '1,200', battV: '3.7V',
+  vb: { x: -40, y: -70, w: 560, h: 460 }, prevVB: '-20 -20 520 360', labelVB: '130 150 220 66',
+  clips: [[70, 40], [410, 40], [8, 170], [472, 170], [96, 300], [384, 300]],
+  slots: [
+    { id: 'pad_membrane', type: 'pad_membrane', side: 'back', z: 1, x: 86, y: 58, w: 308, h: 164, coveredBy: ['mainboard'], label: '버튼 멤브레인' },
+    { id: 'mainboard', type: 'mainboard', side: 'back', z: 2, x: 96, y: 62, w: 288, h: 156, coveredBy: ['stick_l', 'stick_r', 'battery', 'batt_strap'], screws: [[104, 74], [376, 74], [104, 210], [376, 210]],
+      chips: [{ type: 'soc', x: 12, y: 80, w: 30, h: 30 }, { type: 'pmic', x: 110, y: 40, w: 28, h: 22 }] },
+    { id: 'stick_l', type: 'pad_stick', side: 'back', z: 3, x: 300, y: 74, w: 84, h: 84, coveredBy: [], screws: [[310, 84], [374, 148]], label: 'L 스틱 모듈' },
+    { id: 'stick_r', type: 'pad_stick', side: 'back', z: 3, x: 140, y: 132, w: 84, h: 84, coveredBy: [], screws: [[150, 142], [214, 206]], label: 'R 스틱 모듈' },
+    { id: 'trig_l', type: 'pad_trigger', side: 'back', z: 3, x: 340, y: 46, w: 84, h: 36, coveredBy: [], screws: [[350, 56], [414, 56]], label: 'L 트리거' },
+    { id: 'trig_r', type: 'pad_trigger', side: 'back', z: 3, x: 56, y: 46, w: 84, h: 36, coveredBy: [], screws: [[66, 56], [130, 56]], label: 'R 트리거', flip: true },
+    { id: 'charge_port', type: 'charge_port', side: 'back', z: 3, x: 205, y: 28, w: 70, h: 32, coveredBy: [], screws: [[214, 37], [266, 37]] },
+    { id: 'antenna', type: 'antenna', side: 'back', z: 3, x: 146, y: 38, w: 46, h: 18, coveredBy: [], label: '블루투스 안테나' },
+    { id: 'battery', type: 'battery', side: 'back', z: 4, x: 236, y: 92, w: 56, h: 96, coveredBy: ['batt_strap'] },
+    { id: 'batt_strap', type: 'shield', side: 'back', z: 5, x: 230, y: 128, w: 68, h: 18, coveredBy: [], screws: [[238, 137], [290, 137]], label: '배터리 고정 스트랩' },
+    { id: 'rumble_r', type: 'vibration', side: 'back', z: 3, x: 46, y: 228, w: 56, h: 56, coveredBy: [], round: true, label: '오른쪽 진동 모터' },
+    { id: 'rumble_l', type: 'vibration', side: 'back', z: 3, x: 378, y: 228, w: 56, h: 56, coveredBy: [], round: true, label: '왼쪽 진동 모터' },
+    { id: 'back_shell', type: 'pad_shell_back', side: 'back', z: 9, x: 0, y: 0, w: 480, h: 320, coveredBy: [], screws: [[40, 110], [440, 110], [64, 278], [416, 278], [240, 118]], adhesive: { kind: 'clip' } }
+  ],
+  conns: [
+    { id: 'c_batt', owner: 'battery', board: 'mainboard', side: 'back', x: 252, y: 196, w: 26, h: 10, coveredBy: [], label: '배터리 커넥터' },
+    { id: 'c_stl', owner: 'stick_l', board: 'mainboard', side: 'back', x: 304, y: 166, w: 24, h: 10, coveredBy: [], label: 'L 스틱 커넥터' },
+    { id: 'c_str', owner: 'stick_r', board: 'mainboard', side: 'back', x: 156, y: 112, w: 24, h: 10, coveredBy: [], label: 'R 스틱 커넥터' },
+    { id: 'c_tgl', owner: 'trig_l', board: 'mainboard', side: 'back', x: 300, y: 62, w: 20, h: 10, coveredBy: [], label: 'L 트리거 커넥터' },
+    { id: 'c_tgr', owner: 'trig_r', board: 'mainboard', side: 'back', x: 146, y: 86, w: 20, h: 10, coveredBy: [], label: 'R 트리거 커넥터' },
+    { id: 'c_port', owner: 'charge_port', board: 'mainboard', side: 'back', x: 230, y: 66, w: 24, h: 10, coveredBy: [], label: '충전 포트 커넥터' },
+    { id: 'c_ant', owner: 'antenna', board: 'mainboard', side: 'back', x: 180, y: 66, w: 18, h: 8, coveredBy: [], label: '안테나 커넥터' },
+    { id: 'c_rmr', owner: 'rumble_r', board: 'mainboard', side: 'back', x: 120, y: 192, w: 20, h: 10, coveredBy: [], label: '오른쪽 진동 커넥터' },
+    { id: 'c_rml', owner: 'rumble_l', board: 'mainboard', side: 'back', x: 340, y: 192, w: 20, h: 10, coveredBy: [], label: '왼쪽 진동 커넥터' },
+    { id: 'c_mem', owner: 'pad_membrane', board: 'mainboard', side: 'back', x: 286, y: 198, w: 26, h: 10, coveredBy: [], label: '멤브레인 커넥터' }
+  ],
+  paths: {
+    battery: ['battery', 'c:c_batt'],
+    charge: ['charge_port', 'c:c_port'],
+    buttons: ['pad_membrane', 'c:c_mem'],
+    stick_l: ['stick_l', 'c:c_stl'], stick_r: ['stick_r', 'c:c_str'],
+    trig_l: ['trig_l', 'c:c_tgl'], trig_r: ['trig_r', 'c:c_tgr'],
+    vibration: ['rumble_l', 'c:c_rml', 'rumble_r', 'c:c_rmr'],
+    signal: ['antenna', 'c:c_ant']
+  },
+  lci: { side: 'back', x: 56, y: 150 },
+  port: { side: 'back', x: 240, y: 30 },
+  edge: { pad: true, t: 44 }
+};
+const MODEL_IDS = ['lumen', 'pixis', 'nova', 'orbit', 'kestrel'];
 
 /* 부품 가격표(일반 업체 기준, 시장가 1.0) */
 const BASE_PRICE = {
   display_oled: 168000, display_lcd: 115000, battery: 40000, mainboard: 250000, shield: 7000, back_glass: 26000, back_cover: 18000,
   midplate: 24000, camera_rear: 62000, camera_front: 18000, charge_port: 21000, flex_cable: 15000, speaker: 14000, earpiece: 10000,
-  microphone: 6000, vibration: 9000, button_flex: 8000, antenna: 10000, coil: 16000, heatsink: 6000
+  microphone: 6000, vibration: 9000, button_flex: 8000, antenna: 10000, coil: 16000, heatsink: 6000,
+  pad_stick: 26000, pad_trigger: 14000, pad_membrane: 10000, pad_shell_back: 22000
 };
 /* 표준 공임(고객이 '적정'하다고 느끼는 수준) */
 const LABOR = {
   display_oled: 35000, display_lcd: 25000, battery: 20000, mainboard: 45000, shield: 5000, back_glass: 30000, back_cover: 5000,
   midplate: 20000, camera_rear: 25000, camera_front: 25000, charge_port: 25000, flex_cable: 30000, speaker: 18000, earpiece: 22000,
   microphone: 20000, vibration: 18000, button_flex: 30000, antenna: 25000, coil: 20000, heatsink: 15000,
+  pad_stick: 20000, pad_trigger: 15000, pad_membrane: 18000, pad_shell_back: 5000,
   software: 20000, cleaning: 12000, reseat: 15000
 };
 function skuOf(model, slot) { return model + ':' + slot; }
@@ -606,6 +759,37 @@ const FAULTS = {
   heat_damage: { name: '과열 손상', slots: ['display'], eff: { display: 'lines', touch: 'partial' }, hidden: true }
 };
 
+/* 게임 컨트롤러 고장 */
+Object.assign(FAULTS, {
+  stick_drift_l: { name: 'L 스틱 드리프트(쏠림)', slots: ['stick_l'], eff: { stick_l: 'drift' },
+    say: ['왼쪽 스틱을 안 건드려도 캐릭터가 혼자 걸어가요.', '왼쪽 스틱이 자꾸 한쪽으로 쏠려요.'],
+    visual: { need: 1, text: '스틱 모듈의 가변저항 트랙이 닳아 검은 가루가 묻어 있다.' } },
+  stick_drift_r: { name: 'R 스틱 드리프트(쏠림)', slots: ['stick_r'], eff: { stick_r: 'drift' },
+    say: ['오른쪽 스틱을 놔도 화면이 혼자 돌아가요.', '시점이 계속 한쪽으로 돌아가요.'],
+    visual: { need: 1, text: '스틱 모듈의 가변저항 트랙이 닳아 검은 가루가 묻어 있다.' } },
+  trig_l_broken: { name: 'L 트리거 스프링 이탈', slots: ['trig_l'], eff: { trig_l: 'stuck' },
+    say: ['왼쪽 트리거가 눌린 채로 안 올라와요.', 'L 트리거가 헐렁하고 반응이 이상해요.'],
+    visual: { need: 1, text: '트리거 복귀 스프링이 빠져 있고 고정 핀이 휘었다.' } },
+  trig_r_broken: { name: 'R 트리거 스프링 이탈', slots: ['trig_r'], eff: { trig_r: 'stuck' },
+    say: ['오른쪽 트리거가 눌린 채로 안 올라와요.', 'R 트리거를 당겨도 끝까지 안 먹어요.'],
+    visual: { need: 1, text: '트리거 복귀 스프링이 빠져 있고 고정 핀이 휘었다.' } },
+  pad_btn_dead: { name: '버튼 멤브레인 마모', slots: ['pad_membrane'], eff: { buttons: 'some_btn' },
+    say: ['A 버튼이 잘 안 눌려요. 몇 번 눌러야 겨우 돼요.', '버튼 몇 개가 아예 반응이 없어요.'],
+    visual: { need: 2, text: '러버 멤브레인의 전도 패드 일부가 닳아 반들반들하고, 끈적한 음료 자국이 있다.' } },
+  pad_home: { name: '홈(전원) 버튼 고장', slots: ['pad_membrane'], eff: { buttons: 'power_fail' },
+    say: ['패드 전원이 안 켜져요. 홈 버튼을 눌러도 반응이 없어요.', '홈 버튼이 안 눌려서 켤 수가 없어요.'],
+    visual: { need: 2, text: '홈 버튼 아래 고무 돔이 찢어져 있다.' } },
+  rumble_dead: { name: '진동 모터 고장', slots: ['rumble_l'], eff: { vibration: 'none' },
+    say: ['진동이 안 와요.', '왼쪽 손잡이에서 진동이 안 느껴져요.'],
+    visual: { need: 2, text: '진동 모터 축의 편심 추가 헐거워져 손으로 돌리면 걸린다.' } },
+  fw_pair: { name: '펌웨어 손상(페어링 오류)', software: true,
+    say: ['게임기랑 연결이 안 돼요. 페어링이 계속 실패해요.', '블루투스 목록에는 뜨는데 연결이 안 돼요.'] }
+});
+FAULTS.ant_weak.sayPad = ['무선 연결이 자꾸 끊겨요. 조금만 떨어져도 멈춰요.', '게임하다가 연결이 툭툭 끊겨요.'];
+FAULTS.batt_swollen.sayPad = ['배터리가 금방 닳고 뒷면 틈이 벌어졌어요.', '손잡이 쪽이 살짝 부풀어 오른 것 같아요.'];
+FAULTS.batt_worn.sayPad = ['완충해도 한 시간도 못 버텨요.', '배터리가 너무 빨리 닳아요.'];
+FAULTS.batt_dead.sayPad = ['갑자기 전원이 안 켜져요.', '케이블을 꽂아야만 켜지고, 빼면 바로 꺼져요.'];
+
 /* 의뢰 시나리오 — 원인(배경)과 고장 후보의 합리적 관계 */
 const SCENARIOS = [
   { id: 'drop_screen', cause: 'drop', w: 3, pick: [['disp_lines', 6], ['disp_loose', 2], ['touch_dead', 1.5]], extra: [['cam_rear_blur', 0.22]] },
@@ -629,6 +813,25 @@ const CAUSE_TEXT = {
   sudden: { intro: ['어제까지 멀쩡했는데', '아침에 일어나 보니'], q: '아니요. 그런 일은 없었어요. 갑자기 이래요.' },
   unknown: { intro: ['언제부턴가', '얼마 전부터'], q: '글쎄요… 특별히 떨어뜨린 기억은 없어요.' }
 };
+/* 게임 컨트롤러 시나리오 (cat: 'pad') — 스마트폰 시나리오는 cat 없음 = 'phone' */
+SCENARIOS.push(
+  { id: 'pad_drift', cat: 'pad', cause: 'age', w: 3, pick: [['stick_drift_l', 4], ['stick_drift_r', 3]] },
+  { id: 'pad_buttons', cat: 'pad', cause: 'unknown', w: 2, pick: [['pad_btn_dead', 3], ['pad_home', 1.5]] },
+  { id: 'pad_trigger', cat: 'pad', cause: 'drop', w: 2, pick: [['trig_l_broken', 3], ['trig_r_broken', 3]] },
+  { id: 'pad_charge', cat: 'pad', cause: 'age', w: 2, pick: [['port_lint', 3], ['port_corroded', 1], ['port_broken', 2], ['batt_dead', 1.5]] },
+  { id: 'pad_battery', cat: 'pad', cause: 'age', w: 2, pick: [['batt_worn', 4], ['batt_swollen', 1]] },
+  { id: 'pad_rumble', cat: 'pad', cause: 'unknown', w: 1, pick: [['rumble_dead', 3]] },
+  { id: 'pad_conn', cat: 'pad', cause: 'unknown', w: 1.5, pick: [['ant_weak', 3], ['fw_pair', 2]] },
+  { id: 'pad_water', cat: 'pad', cause: 'water', w: 1, multi: [['pad_btn_dead', 3], ['port_corroded', 3], ['rumble_dead', 1]] }
+);
+const CAUSE_TEXT_PAD = {
+  drop: { intro: ['게임하다가 컨트롤러를 바닥에 떨어뜨렸어요.', '아이가 패드를 던졌는데요,', '책상에서 패드가 떨어졌거든요.'], q: '네, 며칠 전에 바닥에 떨어뜨렸어요.' },
+  water: { intro: ['패드에 음료수를 쏟았어요.', '콜라를 엎질렀는데 그 뒤로 이상해요.'], q: '네… 게임하다가 음료수를 쏟았어요. 바로 닦긴 했어요.' },
+  age: { intro: ['이 패드를 몇 년 썼는데요,', '요즘 들어서'], q: '아니요, 떨어뜨리거나 젖은 적은 없어요. 게임을 많이 했어요.' },
+  sudden: CAUSE_TEXT.sudden, unknown: CAUSE_TEXT.unknown
+};
+const causeText = modelId => (MODELS[modelId].cat === 'pad' ? CAUSE_TEXT_PAD : CAUSE_TEXT);
+const devCat = modelId => MODELS[modelId].cat || 'phone';
 const PERSONAS = [
   { id: 'student', label: '학생', budget: 0.85, patience: 1, talk: '반말 섞인 존댓말' },
   { id: 'office', label: '직장인', budget: 1.15, patience: 0, talk: '바쁨' },
@@ -674,15 +877,15 @@ const UPGRADES = {
 
 /* 기기 단계(해금) — 2단계 이후 콘텐츠는 아직 구현되지 않았음을 명시 */
 const DEVICE_TIERS = [
-  { lv: 1, devices: '스마트폰', implemented: true },
+  { lv: 1, devices: '스마트폰 · 게임 컨트롤러', implemented: true },
   { lv: 4, devices: '태블릿 · 무선 이어폰', implemented: false },
-  { lv: 7, devices: '노트북 · 게임 컨트롤러', implemented: false },
+  { lv: 7, devices: '노트북', implemented: false },
   { lv: 10, devices: '휴대용 게임기 · 데스크톱 · 게임 콘솔', implemented: false },
   { lv: 13, devices: '스마트워치 · 디지털카메라 · 기타 소형 기기', implemented: false }
 ];
 
 const SKILLS = {
-  knowledge: { name: '스마트폰 지식', desc: 'Lv2: 작업대에서 커넥터 이름 표시 · Lv3: 선택한 부품과 연결된 커넥터 강조' },
+  knowledge: { name: '기기 구조 지식', desc: 'Lv2: 작업대에서 커넥터 이름 표시 · Lv3: 선택한 부품과 연결된 커넥터 강조' },
   diag: { name: '진단 능력', desc: 'Lv2: 검사 결과 해석 힌트 · Lv3: 접수 시 원인 후보 추론' },
   assembly: { name: '조립 숙련도', desc: '가열·풀탭 미니게임 허용 범위 증가, 조립 시간 감소' },
   speed: { name: '작업 속도', desc: '레벨당 모든 작업 시간 5% 감소' },

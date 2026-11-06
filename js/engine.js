@@ -31,7 +31,7 @@ function newState() {
     tools: { hand: 1, driver: 1, spudger: 80, pick: 40, heater: 1, tweezers: 1, magnifier: 1, brush: 1, tester: 1 },
     upgrades: {}, inv: [], consum: { adhesive: 6 }, scrap: [], minStock: {},
     orders: [], cart: [], packages: [], market: {}, vstock: {},
-    queue: [], arrivals: [], tickets: [], records: [], comebacks: [], ledger: [],
+    queue: [], arrivals: [], tickets: [], records: [], comebacks: [], ledger: [], loans: [], loanHist: [],
     book: {}, flags: {}, tut: { step: 0, active: true, done: false, practice: false },
     bench: null, nextTicket: 1, uid: 1, nextOrder: 1, nextCust: 1,
     dayLog: { rev: 0, exp: 0, repairs: 0 }, history: []
@@ -42,7 +42,7 @@ function newGame() {
   S = newState();
   updateMarket(true);
   // 초기 재고 (부품나라 매입)
-  [['pixis:display', 1], ['lumen:battery', 1], ['nova:battery', 1], ['pixis:charge_port', 1], ['lumen:charge_port', 1], ['lumen:display', 1]].forEach(([sku, q]) => {
+  [['pixis:display', 1], ['lumen:battery', 1], ['nova:battery', 1], ['pixis:charge_port', 1], ['lumen:charge_port', 1], ['lumen:display', 1], ['kestrel:stick_l', 1]].forEach(([sku, q]) => {
     for (let i = 0; i < q; i++) { const p = newPart(sku, 'stock', 'normal'); p.defect = false; p.boughtT = -99999; p.cost = refPrice(sku); S.inv.push(p); }
   });
   addLedger(0, '기초', '초기 운영 자금 인수 ' + WON(S.money));
@@ -252,7 +252,7 @@ function faultValid(modelId, fid) {
   const f = FAULTS[fid]; const m = MODELS[modelId];
   if (f.software) return true;
   if (f.conn) return m.conns.some(c => c.id === f.conn);
-  if (f.lcdOnly && slotDef(modelId, 'display').type !== 'display_lcd') return false;
+  if (f.lcdOnly && (!slotDef(modelId, 'display') || slotDef(modelId, 'display').type !== 'display_lcd')) return false;
   return !!faultSlot(modelId, fid);
 }
 function applyFault(dev, fid, opts = {}) {
@@ -266,7 +266,7 @@ function applyFault(dev, fid, opts = {}) {
 }
 function partOf(dev, sid) { return dev.slots[sid] ? dev.slots[sid].part : null; }
 function partDead(p) { return !!(p.defect || (p.fault && FAULTS[p.fault] && FAULTS[p.fault].dead)); }
-const SEV = { ok: 0, na: 0, intermittent: 1, weak: 1, erratic: 1, partial: 2, blur: 2, distorted: 2, lines: 2, volume_fail: 2, dark: 3, power_fail: 3, none: 4 };
+const SEV = { ok: 0, na: 0, intermittent: 1, weak: 1, erratic: 1, partial: 2, drift: 2, stuck: 2, some_btn: 2, pairfail: 4, blur: 2, distorted: 2, lines: 2, volume_fail: 2, dark: 3, power_fail: 3, none: 4 };
 function worse(a, b) { return (SEV[b] || 0) > (SEV[a] || 0) ? b : a; }
 function evalPath(dev, key) {
   const path = MODELS[dev.modelId].paths[key]; if (!path) return 'na';
@@ -307,25 +307,27 @@ function bootState(dev, charger) {
   if (dev.software === 'sw_bootloop') return { ok: false, why: 'bootloop' };
   return { ok: true, viaCharger: !battOk || !btnOk };
 }
-const FUNC_KEYS = ['power', 'battery', 'charge', 'display', 'touch', 'camera_rear', 'camera_front', 'speaker', 'earpiece', 'mic', 'vibration', 'buttons', 'signal', 'wireless_charge'];
-const FUNC_NAMES = { power: '전원·부팅', battery: '배터리', charge: '유선 충전', display: '화면 출력', touch: '터치', camera_rear: '후면 카메라', camera_front: '전면 카메라', speaker: '라우드 스피커', earpiece: '통화 스피커', mic: '마이크', vibration: '진동', buttons: '버튼', signal: '통신 신호', wireless_charge: '무선 충전' };
+const FUNC_KEYS = ['power', 'battery', 'charge', 'display', 'touch', 'camera_rear', 'camera_front', 'speaker', 'earpiece', 'mic', 'vibration', 'buttons', 'signal', 'wireless_charge', 'stick_l', 'stick_r', 'trig_l', 'trig_r'];
+const FUNC_NAMES = { power: '전원·부팅', battery: '배터리', charge: '유선 충전', display: '화면 출력', touch: '터치', camera_rear: '후면 카메라', camera_front: '전면 카메라', speaker: '라우드 스피커', earpiece: '통화 스피커', mic: '마이크', vibration: '진동', buttons: '버튼', signal: '무선 통신', wireless_charge: '무선 충전', stick_l: 'L 스틱', stick_r: 'R 스틱', trig_l: 'L 트리거', trig_r: 'R 트리거' };
 function evalAll(dev, charger) {
   const boot = bootState(dev, charger);
   const r = { _boot: boot, power: boot.ok ? 'ok' : 'none' };
   r.charge = chargeStatus(dev);
-  ['display', 'touch', 'camera_rear', 'camera_front', 'speaker', 'earpiece', 'mic', 'vibration', 'buttons', 'signal'].forEach(k => {
-    r[k] = boot.ok ? evalPath(dev, k) : 'noboot';
+  const P = MODELS[dev.modelId].paths;
+  ['display', 'touch', 'camera_rear', 'camera_front', 'speaker', 'earpiece', 'mic', 'vibration', 'buttons', 'signal', 'stick_l', 'stick_r', 'trig_l', 'trig_r'].forEach(k => {
+    r[k] = !P[k] ? 'na' : boot.ok ? evalPath(dev, k) : 'noboot';
   });
   if (boot.ok) {
     if (dev.software === 'sw_touch' && r.touch === 'ok') r.touch = 'erratic';
     const b = partOf(dev, 'mainboard'); if (b && b.fault === 'board_baseband') r.signal = 'none';
+    if (dev.software === 'fw_pair' && r.signal === 'ok') r.signal = 'pairfail';
   }
   r.wireless_charge = MODELS[dev.modelId].paths.wireless_charge ? (boardState(dev) === 'ok' && battInfo(dev).present ? evalPath(dev, 'wireless_charge') : 'none') : 'na';
   const bi = battInfo(dev);
   r.battery = !bi.present || !bi.connected ? 'none' : bi.dead ? 'dead' : bi.swollen ? 'swollen' : bi.health < 80 ? 'worn' : dev.software === 'sw_drain' ? 'drain' : 'ok';
   return r;
 }
-const ST_KO = { ok: '정상', na: '해당 없음', none: '작동 안 함', noboot: '부팅 안 됨', intermittent: '간헐적 끊김', weak: '약함', erratic: '오작동', partial: '일부 영역 불량', blur: '초점 불량·흐림', distorted: '소리 찢어짐', lines: '줄·얼룩', volume_fail: '음량 버튼 불량', dark: '매우 어두움', power_fail: '전원 버튼 불량' };
+const ST_KO = { ok: '정상', na: '해당 없음', none: '작동 안 함', noboot: '부팅 안 됨', intermittent: '간헐적 끊김', weak: '약함', erratic: '오작동', partial: '일부 영역 불량', blur: '초점 불량·흐림', distorted: '소리 찢어짐', lines: '줄·얼룩', volume_fail: '음량 버튼 불량', dark: '매우 어두움', power_fail: '전원 버튼 불량', drift: '쏠림(드리프트)', stuck: '눌린 채 복귀 안 됨', some_btn: '일부 버튼 무반응', pairfail: '페어링 실패' };
 const stKo = st => ST_KO[st] || st;
 function funcOK(st) { return st === 'ok' || st === 'na'; }
 
@@ -417,8 +419,9 @@ function tutorialCustomer() {
     complaint: '어제 핸드폰을 떨어뜨렸는데요, 화면에 줄이 생기고 터치도 잘 안 돼요.', asked: {}, exterior: { screenCrack: true, backCrack: false, lensCrack: false, dent: false, lifted: false }, scenario: 'drop_screen' };
 }
 function genCustomer(opts = {}) {
-  const modelId = opts.modelId || R.wpick([['lumen', 3], ['pixis', 3], ['nova', 2.2]]);
-  const valid = SCENARIOS.filter(s => (!s.models || s.models.includes(modelId)) && (s.pick || s.multi).some(([f]) => faultValid(modelId, f)));
+  const modelId = opts.modelId || R.wpick([['lumen', 3], ['pixis', 3], ['nova', 2.2], ['orbit', 2.4], ['kestrel', 2.2]]);
+  const cat = devCat(modelId);
+  const valid = SCENARIOS.filter(s => (s.cat || 'phone') === cat && (!s.models || s.models.includes(modelId)) && (s.pick || s.multi).some(([f]) => faultValid(modelId, f)));
   const sc = R.wpick(valid.map(s => [s, s.w]));
   const faults = [];
   const usedSlots = new Set();
@@ -447,10 +450,10 @@ function genCustomer(opts = {}) {
     if (fd.lens) { dev.slots.camera_rear.part.cracked = true; ext.lensCrack = true; }
     if (fd.swollen) ext.lifted = true;
   });
-  if (sc.cause === 'drop' && modelId === 'nova' && R.chance(0.25)) { dev.slots.back_glass.part.cracked = true; ext.backCrack = true; }
+  if (sc.cause === 'drop' && dev.slots.back_glass && R.chance(0.25)) { dev.slots.back_glass.part.cracked = true; ext.backCrack = true; }
   const persona = R.pick(PERSONAS);
-  const intro = R.pick(CAUSE_TEXT[sc.cause].intro);
-  const says = faults.filter(f => f.noticed).map(f => R.pick(FAULTS[f.id].say));
+  const intro = R.pick(causeText(modelId)[sc.cause].intro);
+  const says = faults.filter(f => f.noticed).map(f => R.pick((cat === 'pad' && FAULTS[f.id].sayPad) || FAULTS[f.id].say));
   const complaint = intro + ' ' + says.join(' 그리고 ');
   const fair = fairPrice(modelId, faults.map(f => f.id));
   let budget = fair * R.range(0.98, 1.65) * persona.budget;
@@ -476,7 +479,7 @@ function candidatesFor(cust) {
 }
 const QUESTIONS = [
   { id: 'when', q: '언제부터 그랬어요?', a: c => ({ drop: '이틀 전에 떨어뜨린 뒤로 이래요.', water: '어제 물에 빠진 뒤부터요.', age: '몇 주 전부터 점점 심해졌어요.', sudden: '어제 밤부터 갑자기요.', unknown: '정확히는 모르겠는데 일주일쯤 됐어요.' })[c.cause] },
-  { id: 'cause', q: '떨어뜨리거나 물에 젖은 적 있나요?', a: c => CAUSE_TEXT[c.cause].q },
+  { id: 'cause', q: '떨어뜨리거나 물에 젖은 적 있나요?', a: c => causeText(c.modelId)[c.cause].q },
   { id: 'charger', q: '충전기나 케이블을 바꿔 보셨어요?', a: c => c.faults.some(f => ['port_lint', 'port_corroded', 'port_broken', 'flex_torn', 'board_pmic', 'batt_dead'].includes(f.id)) ? '네, 집에 있는 거 다 꽂아봤는데 똑같아요.' : '충전은 잘 되는 것 같아요.' },
   { id: 'age', q: '사용하신 지 얼마나 됐어요?', a: c => c.ageMonths + '개월쯤 됐어요.' },
   { id: 'budget', q: '예산은 어느 정도 생각하세요?', a: c => { const acc = skillLv('consult') >= 2 ? R.range(0.95, 1.0) : R.range(0.75, 1.2); return '음… ' + WON(Math.round(c.budget * acc / 10000) * 10000) + ' 정도까지는 생각하고 있어요.'; } },
@@ -536,16 +539,18 @@ function applyQuote(tk, lines, total, isAdd, decision) {
 const TESTS = [
   { id: 'power', name: '전원 상태 검사', min: 5, icon: '⏻' },
   { id: 'charge', name: '충전 반응 검사', min: 4, icon: '🔌' },
-  { id: 'display', name: '화면 출력 검사', min: 3, icon: '🖥' },
-  { id: 'touch', name: '터치 반응 검사', min: 3, icon: '👆' },
-  { id: 'camera', name: '카메라 작동 검사', min: 3, icon: '📷' },
-  { id: 'audio', name: '스피커·마이크 검사', min: 4, icon: '🔊' },
+  { id: 'display', name: '화면 출력 검사', min: 3, icon: '🖥', cat: 'phone' },
+  { id: 'touch', name: '터치 반응 검사', min: 3, icon: '👆', cat: 'phone' },
+  { id: 'camera', name: '카메라 작동 검사', min: 3, icon: '📷', cat: 'phone' },
+  { id: 'audio', name: '스피커·마이크 검사', min: 4, icon: '🔊', cat: 'phone' },
+  { id: 'input', name: '입력 검사(스틱·트리거·버튼)', min: 4, icon: '🎮', cat: 'pad' },
   { id: 'wireless', name: '무선 연결 검사', min: 4, icon: '📶' },
   { id: 'hw', name: '하드웨어 자가진단(진동·버튼)', min: 3, icon: '🧩' },
   { id: 'battery', name: '배터리 상태 검사', min: 4, icon: '🔋' },
   { id: 'software', name: '소프트웨어 이상 검사', min: 6, icon: '💾' }
 ];
 function runTest(dev, id) {
+  const pad = devCat(dev.modelId) === 'pad';
   const pro = !!S.tools.tester_pro; const L = []; const H = [];
   const add = (t, c) => L.push({ t, c: c || '' });
   const hint = t => H.push(t);
@@ -564,7 +569,7 @@ function runTest(dev, id) {
     case 'power':
       add('[배터리만 연결] ' + (bootB.ok ? (pro ? '정상 부팅. 부팅 전류 0.42A → 대기 0.11A 안정' : '정상 부팅됨') : whyTxt(bootB.why, false)), bootB.ok ? 'ok' : 'bad');
       if (!bootB.ok) add('[충전기 연결] ' + (bootC.ok ? '부팅됨! (외부 전원이 있으면 켜짐)' : whyTxt(bootC.why, true)), bootC.ok ? 'warn' : 'bad');
-      if (bootC.ok && ev.display !== 'ok' && ev.vibration === 'ok') add('※ 화면은 확인이 어렵지만 부팅 진동이 느껴집니다.', 'info');
+      if (!pad && bootC.ok && ev.display !== 'ok' && ev.vibration === 'ok') add('※ 화면은 확인이 어렵지만 부팅 진동이 느껴집니다.', 'info');
       if (!bootB.ok && bootC.ok) hint('외부 전원으로는 켜진다 → 배터리 자체(방전·노후) 또는 전원 버튼 계통. 배터리 상태 검사와 하드웨어 자가진단으로 구분해 보세요.');
       if (!bootC.ok && bootC.why === 'pmic') hint('충전기로도 전혀 반응이 없다면 충전 경로/전원 관리 회로(메인보드) 계통일 수 있습니다. 충전 반응 검사로 확인.');
       if (bootC.why === 'bootloop') hint('로고까지 뜬다는 건 하드웨어 전원 경로는 살아 있다는 뜻. 소프트웨어 검사를 해보세요.');
@@ -607,7 +612,26 @@ function runTest(dev, id) {
       add('마이크 녹음: ' + ({ ok: '정상 녹음', none: '녹음 신호 없음' }[ev.mic] || ev.mic), ev.mic === 'ok' ? 'ok' : 'bad');
       if (ev.mic === 'none' && (ev.speaker === 'none')) hint('하단 마이크와 스피커가 함께 안 되면, 둘을 잇는 공통 경로(충전 포트 모듈·메인 플렉스)를 의심.');
       break;
+    case 'input': {
+      if (!bootC.ok) { add(noBootMsg, 'bad'); break; }
+      const SK = { ok: '중앙 복귀 정상 · 전 방향 입력 정상', drift: pro ? '손을 뗀 상태 입력값 0.21 (정상 0.02 이하) — 한쪽으로 쏠림' : '손을 떼도 커서가 천천히 한쪽으로 흘러감', none: '입력 신호 없음' };
+      const TG = { ok: '0→100% 부드럽게 입력 · 복귀 정상', stuck: pro ? '놓아도 68%에서 멈춤 · 값이 튐' : '놓아도 눌린 상태로 남아 있음', none: '입력 신호 없음' };
+      [['stick_l', 'L 스틱', SK], ['stick_r', 'R 스틱', SK], ['trig_l', 'L 트리거', TG], ['trig_r', 'R 트리거', TG]].forEach(([k, n, T]) => add(n + ': ' + (T[ev[k]] || stKo(ev[k])), ev[k] === 'ok' ? 'ok' : 'bad'));
+      add('버튼: ' + ({ ok: '모든 버튼 입력 정상', some_btn: 'A·B 버튼 입력이 간헐적으로 끊기거나 무반응', power_fail: '홈 버튼 무반응 (나머지 버튼 정상)', none: '모든 버튼 입력 없음' }[ev.buttons] || stKo(ev.buttons)), ev.buttons === 'ok' ? 'ok' : 'bad');
+      if (ev.stick_l === 'drift' || ev.stick_r === 'drift') hint('손을 뗐는데도 입력이 남는 건 스틱 가변저항 트랙 마모(드리프트)의 전형. 확대경으로 모듈을 보면 검은 가루가 보일 수 있습니다.');
+      if (ev.trig_l === 'stuck' || ev.trig_r === 'stuck') hint('복귀하지 않는 트리거는 스프링 이탈이 흔합니다. ⤴ 윗면 보기로 트리거 모양을 확인해 보세요.');
+      if (ev.buttons === 'some_btn') hint('여러 버튼이 함께 약하면 버튼 아래 고무 멤브레인 마모·오염을 의심. 메인보드를 들어내야 꺼낼 수 있습니다.');
+      if (ev.stick_l === 'none' || ev.stick_r === 'none' || ev.trig_l === 'none' || ev.trig_r === 'none') hint('입력이 아예 없으면 해당 모듈 커넥터가 빠져 있지 않은지 먼저 확인하세요.');
+      break;
+    }
     case 'wireless': {
+      if (pad) {
+        if (!bootC.ok) { add(noBootMsg, 'bad'); break; }
+        add('블루투스: ' + ({ ok: '정상 연결 · 신호 양호', weak: pro ? '신호 -91dBm (매우 약함) · 1~2m만 떨어져도 끊김' : '연결은 되지만 조금만 떨어져도 끊김', none: '기기가 검색되지 않음', pairfail: '기기는 검색되지만 페어링 실패(인증 오류)' }[ev.signal] || stKo(ev.signal)), ev.signal === 'ok' ? 'ok' : 'bad');
+        if (ev.signal === 'weak') hint('가까이서만 연결된다면 안테나(또는 안테나 커넥터) 문제일 가능성이 큽니다.');
+        if (ev.signal === 'pairfail') hint('검색은 되는데 페어링만 실패한다 → 하드웨어보다 펌웨어 문제일 수 있습니다. 소프트웨어 검사를 해보세요.');
+        break;
+      }
       if (!bootC.ok) { add(noBootMsg, 'bad'); } else {
         const b = partOf(dev, 'mainboard'); const modem = b && b.fault === 'board_baseband';
         add('셀룰러: ' + ({ ok: '신호 4칸 · IMEI 정상', weak: (pro ? '신호 -118dBm (매우 약함)' : '신호 0~1칸') + ' · IMEI 정상 인식', none: modem ? '서비스 없음 · IMEI 읽기 실패' : '신호 없음 · IMEI 정상 인식' }[ev.signal] || ev.signal), ev.signal === 'ok' ? 'ok' : 'bad');
@@ -620,7 +644,8 @@ function runTest(dev, id) {
     }
     case 'hw':
       if (!bootC.ok) { add(noBootMsg, 'bad'); break; }
-      add('진동 모터: ' + (ev.vibration === 'ok' ? '정상' : '진동 없음'), ev.vibration === 'ok' ? 'ok' : 'bad');
+      add('진동 모터' + (pad ? '(좌·우)' : '') + ': ' + (ev.vibration === 'ok' ? '정상' : '진동 없음'), ev.vibration === 'ok' ? 'ok' : 'bad');
+      if (pad) { add('버튼: ' + ({ ok: '홈·A·B·X·Y·방향키 입력 정상', some_btn: '일부 버튼(A·B) 입력 불량', power_fail: '홈(전원) 버튼 입력 없음', none: '모든 버튼 입력 없음' }[ev.buttons] || stKo(ev.buttons)), ev.buttons === 'ok' ? 'ok' : 'bad'); if (ev.buttons === 'power_fail') hint('홈 버튼이 전원 버튼 역할을 하므로, 홈 버튼이 고장 나면 "전원이 안 켜져요"처럼 보입니다.'); break; }
       add('버튼: ' + ({ ok: '전원·음량 버튼 입력 정상', power_fail: '전원 버튼 입력 없음 (음량 버튼 정상)', volume_fail: '음량 버튼 입력 없음 (전원 버튼 정상)', none: '모든 버튼 입력 없음' }[ev.buttons] || ev.buttons), ev.buttons === 'ok' ? 'ok' : 'bad');
       if (ev.buttons === 'power_fail' || ev.buttons === 'none') hint('전원 버튼이 안 되면 "전원이 안 켜져요"처럼 보입니다. 배터리·보드는 멀쩡할 수 있어요.');
       break;
@@ -645,6 +670,13 @@ function runTest(dev, id) {
       if (boardState(dev) !== 'ok' || !(bootC.ok || bootC.why === 'bootloop')) { add('복구 모드에 진입할 수 없습니다. (전원·보드 문제가 먼저 해결되어야 함)', 'bad'); break; }
       if (dev.software === 'sw_bootloop') { add('복구 모드 진단: 시스템 파티션 손상 감지 — 부팅 반복의 원인', 'bad'); hint('하드웨어가 아니라 소프트웨어 문제입니다. "소프트웨어 재설치"로 복구할 수 있습니다.'); break; }
       const m = MODELS[dev.modelId];
+      if (pad) {
+        const detp = (k, n) => { const ok = ev[k] !== 'none' && ev[k] !== 'noboot'; add('장치 목록 · ' + n + ': ' + (ok ? '인식됨' : '미검출'), ok ? 'ok' : 'bad'); };
+        detp('stick_l', 'L 스틱'); detp('stick_r', 'R 스틱'); detp('trig_l', 'L 트리거'); detp('trig_r', 'R 트리거'); detp('vibration', '진동 모터');
+        if (dev.software === 'fw_pair') { add('오류 로그: 페어링 키 저장 영역 손상 (pair_store CRC 오류)', 'bad'); hint('하드웨어가 아닌 펌웨어 문제입니다. "소프트웨어 재설치"(펌웨어 재설치)로 고칠 수 있습니다.'); }
+        else add('펌웨어 무결성: 이상 없음', 'ok');
+        break;
+      }
       const det = (k, n) => { const ok = ev[k] !== 'none' && ev[k] !== 'noboot'; add('장치 목록 · ' + n + ': ' + (ok ? '인식됨' : '미검출'), ok ? 'ok' : 'bad'); };
       det('display', '디스플레이 컨트롤러'); det('touch', '터치 컨트롤러'); det('camera_rear', '후면 카메라'); det('camera_front', '전면 카메라');
       det('mic', '하단 마이크'); det('speaker', '스피커 앰프');
@@ -873,6 +905,7 @@ function endDay() {
   }
   sum.notes.unshift('전기요금 ' + WON(elec) + ' 청구' + (minOfDay() > CLOSE ? ' (야간 연장 영업 포함)' : ''));
   const nd = d + 1;
+  loansDaily(sum, nd % 7 === 0);
   if (nd % 7 === 0) {
     const bizCut = 1 - 0.03 * skillLv('biz');
     const rent = Math.round(250000 * bizCut), senior = 300000, salary = 200000;

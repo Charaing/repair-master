@@ -69,6 +69,7 @@ UI.hoverTip = function (e) {
   else if (k === 'seg') txt = '접착면 — 픽으로 드래그해 절단';
   else if (k === 'clip') txt = '플라스틱 클립 — 픽으로 클릭';
   else if (k === 'backfixed') txt = '후면 글라스 (분해 불가)';
+  else if (k === 'frontfixed') txt = '앞면 쉘 (분해 불필요 — 뒷면을 여세요)';
   tip.textContent = txt; tip.style.display = 'block'; tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 12) + 'px';
 };
 UI.hideTip = () => { $('#tooltip').style.display = 'none'; };
@@ -197,13 +198,13 @@ UI.sceneAct = function (act) {
   if (act === 'crm') return Computer.open('crm');
   if (act === 'door') return UI.endDayFlow();
 };
-UI.pickBenchTicket = function () {
+UI.pickBenchTicket = function (force) {
   const list = S.tickets;
   if (!list.length) return UI.senior('지금 작업대에 올릴 기기가 없어요. 접수대에서 손님을 먼저 받아봐요.');
-  if (S.bench && benchTicket()) return openBench();
-  if (list.length === 1) return openBench(list[0].id);
-  UI.modal('작업대에 올릴 기기 선택', `<div class="pick-list">${list.map(t => `<button class="pick-item fit" data-id="${t.id}">${UI.avatar(t.cust.avatar, 40)}<span><b>${t.id} · ${esc(t.cust.name)}</b> — ${MODELS[t.modelId].name}<br><small>${UI.statusName(t.status)} · 기한 ${fmtDT(t.deadlineT)}</small></span></button>`).join('')}</div>`, b => {
-    $$('.pick-item', b).forEach(x => x.onclick = () => { UI.closeModal(); openBench(x.dataset.id); });
+  if (!force && S.bench && benchTicket()) return openBench();
+  if (list.length === 1) { if (force) return UI.toast('🔧', '수리 중인 기기가 이것 하나뿐입니다.'); return openBench(list[0].id); }
+  UI.modal(force ? '🔄 작업할 기기 바꾸기' : '작업대에 올릴 기기 선택', `${force ? '<p class="hint">지금 기기는 분해된 상태 그대로 선반에 보관됩니다. 나중에 다시 올리면 이어서 작업할 수 있어요.</p>' : ''}<div class="pick-list">${list.map(t => `<button class="pick-item fit${t.id === S.bench ? ' cur' : ''}" data-id="${t.id}">${UI.avatar(t.cust.avatar, 40)}<span><b>${t.id} · ${esc(t.cust.name)}</b> — ${MODELS[t.modelId].name}<br><small>${UI.statusName(t.status)} · 기한 ${fmtDT(t.deadlineT)}${t.id === S.bench ? ' · <b>지금 작업대 위</b>' : ''}</small></span></button>`).join('')}</div>`, b => {
+    $('.pick-item', b).forEach(x => x.onclick = () => { UI.closeModal(); if (force && x.dataset.id === S.bench) return; save(); openBench(x.dataset.id); });
   });
 };
 
@@ -237,17 +238,18 @@ UI.openCounter = function () {
     if (!c && ready.length) { $$('.counter-tabs button', b)[1].click(); } else renderQ();
   }, { size: 'lg' });
 };
-UI.devPreview = function (dev, side, vb) { const v = dev.view; dev.view = side; const h = renderDevice(dev, { showUnknown: false }); dev.view = v; return `<svg viewBox="${vb || '-20 -20 400 800'}" class="dev-prev">${h}</svg>`; };
+UI.devPreview = function (dev, side, vb) { const v = dev.view; dev.view = side; const h = renderDevice(dev, { showUnknown: false }); dev.view = v; return `<svg viewBox="${vb || MODELS[dev.modelId].prevVB || '-20 -20 400 800'}" class="dev-prev">${h}</svg>`; };
 UI.intakeForm = function (c) {
   const dev = c.device;
   UI.modal('📋 수리 접수서 — ' + esc(c.name) + ' 님', `<div class="intake"><div class="prev-col">
     <div class="prevs"><figure>${UI.devPreview(dev, 'front')}<figcaption>앞면</figcaption></figure><figure>${UI.devPreview(dev, 'back')}<figcaption>뒷면</figcaption></figure></div>
-    <figure class="label-zoom">${UI.devPreview(dev, 'back', '30 650 300 80')}<figcaption>🔍 뒷면 아래쪽 확대 — 모델 코드 확인</figcaption></figure></div>
+    <figure class="label-zoom">${UI.devPreview(dev, 'back', MODELS[dev.modelId].labelVB || '30 650 300 80')}<figcaption>🔍 뒷면 라벨 확대 — 모델 코드 확인</figcaption></figure></div>
     <div class="form">
-      <label>기기 모델 <small class="muted">— 뒷면 아래쪽의 Model 코드를 확인하세요</small><select id="fModel"><option value="">선택…</option>${MODEL_IDS.map(id => `<option value="${id}">${MODELS[id].name} (${MODELS[id].code}) — ${MODELS[id].tier}</option>`).join('')}</select></label>
-      <fieldset><legend>외관 상태 점검</legend>
+      <label>기기 모델 <small class="muted">— 뒷면 라벨의 Model 코드를 확인하세요</small><select id="fModel"><option value="">선택…</option>${MODEL_IDS.map(id => `<option value="${id}">${MODELS[id].name} (${MODELS[id].code}) — ${MODELS[id].tier}</option>`).join('')}</select></label>
+      <fieldset><legend>외관 상태 점검</legend>${devCat(c.modelId) === 'pad' ? `
+        <label class="chk"><input type="checkbox" data-e="dent"> 쉘 찍힘·긁힘</label><label class="chk"><input type="checkbox" data-e="lifted"> 쉘 틈 벌어짐</label>` : `
         <label class="chk"><input type="checkbox" data-e="screenCrack"> 화면 유리 파손</label><label class="chk"><input type="checkbox" data-e="backCrack"> 후면 파손</label>
-        <label class="chk"><input type="checkbox" data-e="lensCrack"> 카메라 렌즈 파손</label><label class="chk"><input type="checkbox" data-e="dent"> 프레임 찍힘</label><label class="chk"><input type="checkbox" data-e="lifted"> 화면·후면 들뜸</label></fieldset>
+        <label class="chk"><input type="checkbox" data-e="lensCrack"> 카메라 렌즈 파손</label><label class="chk"><input type="checkbox" data-e="dent"> 프레임 찍힘</label><label class="chk"><input type="checkbox" data-e="lifted"> 화면·후면 들뜸</label>`}</fieldset>
       <label>고객 증상<textarea id="fSym" rows="3">${esc(c.complaint)}</textarea></label>
       <label>접수 메모 (선택)<input id="fMemo" placeholder="예) 낙하 이력 있음, 예산 약 20만 원"></label>
       <p class="small">수리 희망 기한: <b>${c.asked.deadline ? c.deadlineDays + '일 이내 (' + fmtDT((dayIdx() + c.deadlineDays) * DAY + CLOSE) + ')' : '아직 묻지 않음 — 기본 ' + c.deadlineDays + '일로 기록'}</b></p>

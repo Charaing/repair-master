@@ -109,10 +109,17 @@ DRAW.back_glass = (sd, p, st, m, dev) => {
   s += `<rect x="0" y="0" width="360" height="760" rx="50" fill="url(#gGloss)"/>`;
   s += `<linearGradient id="gBk_${m.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.back2}" stop-opacity=".55"/><stop offset="1" stop-color="${c.back}" stop-opacity="0"/></linearGradient><rect x="0" y="0" width="360" height="760" rx="50" fill="url(#gBk_${m.id})"/>`;
   // 카메라 섬
+  const cam = partOf(dev, 'camera_rear');
+  if (m.id === 'orbit') {
+    s += `<rect x="30" y="28" width="300" height="92" rx="38" fill="#1a0f17" stroke="#a77a95" stroke-width="1.5"/><rect x="30" y="28" width="300" height="92" rx="38" fill="url(#gGloss)"/>`;
+    s += lensSVG(90, 74, 22) + lensSVG(156, 74, 22) + `<circle cx="222" cy="62" r="7" fill="#f2e7c9" stroke="#999"/><circle cx="222" cy="88" r="4" fill="#1a1a1a"/>` + labelSVG(290, 80, '64MP', 11, '#d9b6cb', 'middle', 'letter-spacing="1" opacity=".8"');
+    if (cam && cam.cracked) s += crackSVG(156, 74, 77, .45, { r: 26 });
+  } else {
   s += `<rect x="22" y="22" width="124" height="156" rx="30" fill="#0f1828" stroke="#5f6f8a" stroke-width="1.5"/><rect x="22" y="22" width="124" height="156" rx="30" fill="url(#gGloss)"/>`;
   s += lensSVG(60, 62, 19) + lensSVG(60, 138, 19) + lensSVG(110, 100, 17);
   s += `<circle cx="113" cy="48" r="6" fill="#f2e7c9" stroke="#999"/><circle cx="113" cy="152" r="4" fill="#1a1a1a"/>`;
-  const cam = partOf(dev, 'camera_rear'); if (cam && cam.cracked) s += crackSVG(60, 138, 77, .45, { r: 24 });
+  if (cam && cam.cracked) s += crackSVG(60, 138, 77, .45, { r: 24 });
+  }
   s += labelSVG(180, 420, m.brand, 26, '#c9d6ee', 'middle', 'letter-spacing="10" font-weight="300" opacity=".85"');
   s += labelSVG(180, 694, 'Model ' + m.code, 34, '#9fb0cc', 'middle', 'font-weight="800" letter-spacing="1.5" opacity=".9"') + labelSVG(180, 714, 'S/N ' + (dev ? dev.serial : ''), 11, '#9fb0cc', 'middle', 'opacity=".7"');
   s += labelSVG(180, 724, 'Designed by ' + m.brand + ' · 가상 브랜드', 7.5, '#9fb0cc', 'middle', 'opacity=".55"');
@@ -151,6 +158,7 @@ function drawDisplayFront(sd, p, st, m, dev) {
   s += `<rect x="${ax}" y="${ay}" width="${aw}" height="${ah}" rx="${lcd ? 8 : 42}" fill="url(#gScreen)"/>`;
   s += `<path d="M0 0 L240 0 L60 760 L0 760 Z" fill="#fff" opacity=".035"/>`;
   if (m.id === 'nova') s += `<circle cx="180" cy="32" r="9" fill="#000" stroke="#1c1f26" stroke-width="2"/><rect x="150" y="6" width="60" height="3" rx="1.5" fill="#1b1d22"/>`;
+  else if (m.id === 'orbit') s += `<circle cx="44" cy="34" r="9" fill="#000" stroke="#1c1f26" stroke-width="2"/><rect x="150" y="6" width="60" height="3" rx="1.5" fill="#1b1d22"/>`;
   else if (m.id === 'pixis') s += `<rect x="146" y="20" width="68" height="22" rx="11" fill="#000" stroke="#1c1f26"/><rect x="152" y="7" width="56" height="3" rx="1.5" fill="#1b1d22"/>`;
   else s += `<path d="M164 44 Q180 66 196 44 Z" fill="#000"/><rect x="146" y="18" width="68" height="4" rx="2" fill="#16181c"/>` + labelSVG(180, 735, m.brand, 12, '#4f5a66', 'middle', 'letter-spacing="5"');
   if (p.cracked) s += crackSVG(268, 590, hashStr(p.uid), 1);
@@ -197,7 +205,14 @@ DRAW.battery = (sd, p, st, m) => {
   let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="url(#gBatt)" stroke="#000" stroke-width="1"/>`;
   const lx = x + 14, ly = y + 30, lw = w - 28, lh = Math.min(150, h * .45);
   s += `<rect x="${lx}" y="${ly}" width="${lw}" height="${lh}" rx="6" fill="#e8edf2"/>`;
-  const cap = { nova: '4,700', pixis: '3,900', lumen: '5,000' }[m.id];
+  const cap = m.batt || { nova: '4,700', pixis: '3,900', lumen: '5,000' }[m.id];
+  if (w < 120) {
+    s += `<rect x="${x + 6}" y="${y + 10}" width="${w - 12}" height="${h - 24}" rx="4" fill="#e8edf2"/>`;
+    s += labelSVG(x + w / 2, y + 28, 'Li-ion', 9, '#1c2733', 'middle', 'font-weight="700"') + labelSVG(x + w / 2, y + 42, m.battV || '3.87V', 8, '#334') + labelSVG(x + w / 2, y + 55, cap + 'mAh', 8, '#334') + labelSVG(x + w / 2, y + 68, p.origin === 'original' ? 'GENUINE' : p.grade, 7, '#556');
+    s += `<rect x="${x + w / 2 - 12}" y="${y - 4}" width="24" height="8" rx="2" fill="#111"/>`;
+    if (p.swollen) s += `<ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w * .45}" ry="${h * .4}" fill="url(#gSwell)"/><ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w * .45}" ry="${h * .4}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-dasharray="4 4"/>`;
+    return s;
+  }
   s += labelSVG(lx + 12, ly + 26, 'Li-ion Polymer Battery', 13, '#1c2733', 'start', 'font-weight="700"');
   s += labelSVG(lx + 12, ly + 46, '3.87V ⎓ ' + cap + 'mAh', 11, '#334', 'start');
   s += labelSVG(lx + 12, ly + 64, m.brand + ' ENERGY · ' + (p.origin === 'original' ? 'GENUINE' : p.grade + ' GRADE'), 9, '#556', 'start');
@@ -224,6 +239,7 @@ DRAW.camera_rear = (sd, p, st, m) => {
   const n = m.style.camCount;
   if (m.id === 'nova') s += lensSVG(x + 30, y + 32, 17) + lensSVG(x + 30, y + 88, 17) + lensSVG(x + 74, y + 60, 15);
   else if (m.id === 'pixis') s += lensSVG(x + 28, y + 30, 16) + lensSVG(x + 60, y + 66, 14);
+  else if (m.id === 'orbit') s += lensSVG(x + 34, y + 30, 18) + lensSVG(x + 100, y + 30, 18);
   else s += lensSVG(x + w / 2, y + 30, 14) + lensSVG(x + w / 2, y + 84, 12);
   s += `<rect x="${x + 6}" y="${y + h - 14}" width="${w - 12}" height="8" rx="2" fill="url(#gKapton)" opacity=".8"/>`;
   if (p.cracked) s += crackSVG(x + 30, y + 88, 5, .3, { r: 16 });
@@ -252,7 +268,7 @@ DRAW.charge_port = (sd, p, st, m) => {
   s += smdField(x + 4, y + 4, w - 8, h - 8, hashStr(m.id + 'cp'), .8);
   const px = x + w / 2 - 22, py = y + h - 16;
   s += `<rect x="${px}" y="${py}" width="44" height="14" rx="7" fill="url(#gMetal)" stroke="#555"/><rect x="${px + 6}" y="${py + 4}" width="32" height="6" rx="3" fill="#111"/>`;
-  if (!slotDef(m.id, 'microphone')) s += `<circle cx="${x + w / 2 - 44}" cy="${y + h - 10}" r="5" fill="url(#gMetal)" stroke="#555"/><circle cx="${x + w / 2 - 44}" cy="${y + h - 10}" r="1.6" fill="#000"/>`;
+  if (!slotDef(m.id, 'microphone') && m.cat !== 'pad') s += `<circle cx="${x + w / 2 - 44}" cy="${y + h - 10}" r="5" fill="url(#gMetal)" stroke="#555"/><circle cx="${x + w / 2 - 44}" cy="${y + h - 10}" r="1.6" fill="#000"/>`;
   if (p.fault === 'port_corroded') { const rnd = seeded(9); for (let i = 0; i < 24; i++) s += `<circle cx="${px + rnd() * 50 - 3}" cy="${py - rnd() * 18}" r="${1 + rnd() * 1.8}" fill="${rnd() < .5 ? '#7fd1a0' : '#e8f2e9'}" opacity=".85"/>`; }
   return s;
 };
@@ -281,6 +297,106 @@ DRAW.midplate = (sd, p) => {
   if (p.fault === 'ant_weak') s += `<path d="M${x + w - 12} ${y + 200} l-6 4 l8 6" stroke="#2c3034" stroke-width="5"/>`;
   return s;
 };
+
+/* ---------------- 게임 컨트롤러 (케스트렐 G1) ---------------- */
+const PAD_GRIP_L = 'M4 196 L126 228 L126 276 Q102 316 60 312 Q2 304 4 236 Z';
+const PAD_GRIP_R = 'M476 196 L354 228 L354 276 Q378 316 420 312 Q478 304 476 236 Z';
+const padScale = k => `transform="translate(240 160) scale(${k}) translate(-240 -160)"`;
+DRAW.pad_frame = (m, side, dev) => {
+  const st = m.style;
+  let s = `<path d="${PAD_PATH}" fill="${st.frame}" filter="url(#fShadow)" ${padScale(1.015)}/>`;
+  s += `<path d="${PAD_PATH}" fill="#16181c" ${padScale(0.965)}/>`;
+  s += `<path d="${PAD_PATH}" fill="none" stroke="#2c3036" stroke-width="3" ${padScale(0.94)}/>`;
+  s += `<g opacity=".8">${[[40, 110], [440, 110], [64, 278], [416, 278], [240, 118]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="#2a2d32" stroke="#3a3e44"/>`).join('')}</g>`;
+  if (m.lci && m.lci.side === side) {
+    const { x, y } = m.lci;
+    s += `<g data-kind="lci" class="lci"><rect x="${x - 4}" y="${y - 4}" width="22" height="22" fill="transparent"/><rect x="${x}" y="${y}" width="14" height="14" rx="2" fill="${dev && dev.lciRed ? '#d8343a' : '#f3f3f0'}" stroke="#777" stroke-width=".8"/><path d="M${x + 2} ${y + 12} L${x + 12} ${y + 2}" stroke="#999" stroke-width=".6"/></g>`;
+  }
+  return s;
+};
+DRAW.pad_shell_back = (sd, p, st, m, dev) => {
+  const c = m.style;
+  let s = `<path d="${PAD_PATH}" fill="${c.back}"/>`;
+  s += `<path d="${PAD_GRIP_L}" fill="url(#pRib)" opacity=".55"/><path d="${PAD_GRIP_R}" fill="url(#pRib)" opacity=".55"/>`;
+  s += `<path d="${PAD_PATH}" fill="url(#gGloss)" opacity=".55"/>`;
+  s += `<path d="${PAD_PATH}" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="2" ${padScale(0.985)}/>`;
+  s += `<path d="M150 66 Q240 48 330 66" stroke="#000" stroke-opacity=".25" fill="none"/>`;
+  s += labelSVG(240, 90, m.brand, 15, '#aab4c0', 'middle', 'letter-spacing="6" opacity=".8"');
+  s += labelSVG(240, 178, 'Model ' + m.code, 26, '#c4ccd6', 'middle', 'font-weight="800" letter-spacing="1.5" opacity=".92"');
+  s += labelSVG(240, 195, 'S/N ' + (dev ? dev.serial : ''), 9.5, '#c4ccd6', 'middle', 'opacity=".7"');
+  s += labelSVG(240, 207, 'Wireless Controller · 가상 브랜드', 6.5, '#c4ccd6', 'middle', 'opacity=".55"');
+  const b = partOf(dev, 'battery');
+  if (b && b.swollen) s += `<ellipse cx="264" cy="140" rx="70" ry="54" fill="url(#gSwell)"/><path d="M180 222 Q240 230 300 222" stroke="#fff" stroke-width="2" opacity=".5" fill="none"/>`;
+  return s;
+};
+DRAW.pad_front = (m, dev) => {
+  const c = m.style; let s = `<path d="${PAD_PATH}" fill="${c.face}"/>`;
+  s += `<path d="${PAD_GRIP_L}" fill="#000" opacity=".06"/><path d="${PAD_GRIP_R}" fill="#000" opacity=".06"/><path d="${PAD_PATH}" fill="url(#gGloss)" opacity=".7"/>`;
+  s += `<path d="${PAD_PATH}" fill="none" stroke="#b9bfc6" stroke-width="2" ${padScale(0.985)}/>`;
+  const stick = (cx, cy, sid) => {
+    const p = partOf(dev, sid);
+    let t = `<circle cx="${cx}" cy="${cy}" r="34" fill="#cfd4da" stroke="#9aa1a8"/><circle cx="${cx}" cy="${cy}" r="28" fill="#1e2125"/>`;
+    if (!p) return t + labelSVG(cx, cy + 4, '모듈 없음', 8, '#8a9097');
+    const off = p.fault && p.fault.startsWith('stick_drift') ? 4 : 0;
+    return t + `<circle cx="${cx + off}" cy="${cy - off}" r="23" fill="#3a3e45" stroke="#15171a" stroke-width="2"/><circle cx="${cx + off}" cy="${cy - off}" r="16" fill="none" stroke="#565b63" stroke-dasharray="2 2"/>`;
+  };
+  s += stick(130, 110, 'stick_l') + stick(300, 196, 'stick_r');
+  s += `<rect x="168" y="172" width="20" height="48" rx="3" fill="#2a2d33"/><rect x="154" y="186" width="48" height="20" rx="3" fill="#2a2d33"/><circle cx="178" cy="196" r="4" fill="#3d4148"/>`;
+  [[350, 134, 'A', '#4caf7a'], [374, 110, 'B', '#e0574f'], [326, 110, 'X', '#4f8fe0'], [350, 86, 'Y', '#e6b84a']].forEach(([x, y, l, col]) => {
+    s += `<circle cx="${x}" cy="${y}" r="12.5" fill="#2a2d33" stroke="#15171a"/>` + labelSVG(x, y + 4.5, l, 12, col, 'middle', 'font-weight="800"');
+  });
+  s += `<circle cx="240" cy="116" r="14" fill="#2a2d33" stroke="${c.accent}" stroke-width="2"/>` + labelSVG(240, 121, 'K', 13, c.accent, 'middle', 'font-weight="800"');
+  s += `<rect x="198" y="76" width="16" height="9" rx="4.5" fill="#2a2d33"/><rect x="266" y="76" width="16" height="9" rx="4.5" fill="#2a2d33"/>`;
+  s += `<rect x="220" y="40" width="40" height="4" rx="2" fill="${c.accent}" opacity=".85"/>`;
+  s += labelSVG(240, 160, m.brand, 9, '#8a9097', 'middle', 'letter-spacing="4"');
+  return `<g data-kind="frontfixed">${s}</g>`;
+};
+DRAW.pad_stick = (sd, p) => {
+  const { x, y, w, h } = sd; const cx = x + w / 2, cy = y + h / 2, r = w * .3;
+  let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#26292e" stroke="#0f1012" filter="url(#fSoft)"/>`;
+  s += `<rect x="${x + w - 16}" y="${cy - 13}" width="12" height="26" rx="2" fill="#1d6b3a" stroke="#0e3a1f"/><rect x="${cx - 13}" y="${y + h - 16}" width="26" height="12" rx="2" fill="#1d6b3a" stroke="#0e3a1f"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gMetal)" stroke="#555"/><rect x="${cx - r}" y="${cy - 4}" width="${r * 2}" height="8" fill="#8d959e"/><rect x="${cx - 4}" y="${cy - r}" width="8" height="${r * 2}" fill="#8d959e"/><circle cx="${cx}" cy="${cy}" r="7" fill="#33373d"/>`;
+  if (p.fault && p.fault.startsWith('stick_drift')) { const rnd = seeded(hashStr(p.uid)); for (let i = 0; i < 14; i++) s += `<circle cx="${x + w - 10 + (rnd() - .5) * 8}" cy="${cy + (rnd() - .5) * 22}" r="${.8 + rnd()}" fill="#0a0a0a" opacity=".85"/>`; }
+  s += labelSVG(x + 22, y + h - 6, 'STICK', 7, '#9aa0a6', 'start', 'font-weight="700"');
+  return s;
+};
+DRAW.pad_trigger = (sd, p) => {
+  const { x, y, w, h } = sd; const cx = x + w / 2;
+  let s = `<path d="M${x + 6} ${y + h} Q${x} ${y + 6} ${x + 20} ${y + 4} L${x + w - 20} ${y + 4} Q${x + w} ${y + 6} ${x + w - 6} ${y + h} Z" fill="#33373d" stroke="#111" filter="url(#fSoft)"/>`;
+  s += `<rect x="${cx - 9}" y="${y + h - 14}" width="18" height="9" rx="2" fill="#1d6b3a"/>`;
+  const broken = p.fault && p.fault.startsWith('trig_');
+  let d = `M${cx - 22} ${y + 18}`; for (let i = 0; i < 8; i++) d += ` l5.5 ${i % 2 ? -6 : 6}`;
+  s += `<path d="${d}" stroke="${broken ? '#8a8f96' : 'url(#gMetal)'}" stroke-width="2" fill="none" ${broken ? `transform="rotate(24 ${cx} ${y + 18}) translate(14 8)"` : ''}/>`;
+  s += labelSVG(x + w - 8, y + h - 6, 'TRG', 7, '#9aa0a6', 'end', 'font-weight="700"');
+  return s;
+};
+DRAW.pad_membrane = (sd, p) => {
+  const { x, y, w, h } = sd;
+  let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="#3b3f46" stroke="#22252a"/>`;
+  const worn = p.fault === 'pad_btn_dead';
+  [[x + 60, y + 52], [x + 84, y + 28], [x + 108, y + 52], [x + 84, y + 76]].forEach(([bx, by], i) => s += `<circle cx="${bx}" cy="${by}" r="11" fill="${worn && i < 2 ? '#6f747c' : '#2b2e33'}" stroke="#1a1c20"/><circle cx="${bx}" cy="${by}" r="5" fill="${worn && i < 2 ? '#9aa0a6' : '#15171a'}"/>`);
+  s += `<circle cx="${x + w / 2}" cy="${y + 58}" r="12" fill="#2b2e33" stroke="#1a1c20"/>`;
+  [[x + w - 122, y + 126], [x + w - 98, y + 110], [x + w - 98, y + 142], [x + w - 74, y + 126]].forEach(([bx, by]) => s += `<rect x="${bx - 9}" y="${by - 9}" width="18" height="18" rx="4" fill="#2b2e33" stroke="#1a1c20"/>`);
+  s += labelSVG(x + w / 2, y + h - 10, 'RUBBER MEMBRANE', 8, '#8a9097', 'middle', 'letter-spacing="2"');
+  return s;
+};
+function renderPadEdge(dev, opts = {}) {
+  const m = MODELS[dev.modelId], T = m.edge.t, st = m.style;
+  let s = `<ellipse cx="240" cy="${T + 12}" rx="236" ry="8" fill="#000" opacity=".3"/>`;
+  s += `<path d="M24 0 L456 0 L424 -60 L56 -60 Z" fill="${st.face}" opacity=".22"/>` + labelSVG(240, -68, '▲ 앞면(버튼) 쪽', 10, '#9fb3c3');
+  s += `<rect x="0" y="0" width="480" height="${T}" rx="${T / 2}" fill="${st.back}" filter="url(#fShadow)"/><rect x="0" y="0" width="480" height="${T * .45}" rx="${T / 4}" fill="${st.face}" opacity=".92"/>`;
+  const trig = (x, sid, label) => {
+    const p = partOf(dev, sid);
+    if (!p) return `<rect x="${x}" y="4" width="100" height="${T - 8}" rx="10" fill="#0b0c0e"/>` + labelSVG(x + 50, T / 2 + 3, label + ' 없음', 8, '#777');
+    const broken = p.fault && p.fault.startsWith('trig_');
+    return `<g ${broken ? `transform="rotate(5 ${x + 50} ${T / 2}) translate(0 5)"` : ''}><rect x="${x}" y="4" width="100" height="${T - 8}" rx="12" fill="#33373d" stroke="#111"/><rect x="${x + 8}" y="8" width="84" height="6" rx="3" fill="#fff" opacity=".08"/></g>` + labelSVG(x + 50, T + 22, label + (broken ? ' — 눌린 채 기울어 있음' : ''), 9, broken ? '#ffb38a' : '#9fb3c3');
+  };
+  s += trig(36, 'trig_l', 'L 트리거') + trig(344, 'trig_r', 'R 트리거');
+  s += portSVG(dev, 240, T / 2);
+  s += `<rect x="150" y="${T / 2 - 2}" width="22" height="4" rx="2" fill="${st.accent}" opacity=".7"/>`;
+  s += labelSVG(240, T + 58, '윗면 — 충전 포트 · L/R 트리거', 10.5, '#cfe6e2');
+  return `<g class="devroot"><g class="phone edge">${s}</g></g>`;
+}
 
 /* ---------------- 커넥터 ---------------- */
 function connSVG(dev, c, m, opts) {
@@ -319,9 +435,10 @@ function segLines(sd) {
 }
 const CLIP_POS = [[6, 160], [6, 560], [354, 160], [354, 560], [180, 6], [180, 754]];
 function renderDevice(dev, opts = {}) {
-  const m = MODELS[dev.modelId]; const side = dev.view;
-  if (side === 'bottom') return renderEdge(dev, opts);
-  let body = DRAW.frame(m, side, dev);
+  const m = MODELS[dev.modelId]; const side = dev.view; const pad = m.cat === 'pad';
+  if (side === 'bottom') return pad ? renderPadEdge(dev, opts) : renderEdge(dev, opts);
+  let body = pad ? DRAW.pad_frame(m, side, dev) : DRAW.frame(m, side, dev);
+  if (side === 'front' && m.frontFixed) { body += DRAW.pad_front(m, dev); return wrapDevice(body, '', opts); }
   if (side === 'back' && m.backFixed) {
     body += DRAW.back_fixed(m, dev);
     return wrapDevice(body, '', opts);
@@ -343,7 +460,7 @@ function renderDevice(dev, opts = {}) {
         segLines(sd).forEach((L, i) => { body += `<line x1="${L[0]}" y1="${L[1]}" x2="${L[2]}" y2="${L[3]}" class="seg${st.cut[i] ? ' cut' : ''}" data-kind="seg" data-id="${sd.id}|${i}"/>`; });
       }
       if (sd.adhesive.kind === 'clip' && st.adhesive === 'intact') {
-        CLIP_POS.forEach(([cx, cy], i) => { body += `<g class="clip${st.clips[i] ? ' off' : ''}" data-kind="clip" data-id="${sd.id}|${i}"><circle cx="${cx}" cy="${cy}" r="16" fill="transparent"/><rect x="${cx - 9}" y="${cy - 6}" width="18" height="12" rx="3"/></g>`; });
+        (m.clips || CLIP_POS).forEach(([cx, cy], i) => { body += `<g class="clip${st.clips[i] ? ' off' : ''}" data-kind="clip" data-id="${sd.id}|${i}"><circle cx="${cx}" cy="${cy}" r="16" fill="transparent"/><rect x="${cx - 9}" y="${cy - 6}" width="18" height="12" rx="3"/></g>`; });
       }
     });
   }
@@ -377,7 +494,13 @@ function renderEdge(dev, opts = {}) {
   for (let i = 0; i < E.micN; i++) { const x = E.mic[0] + (E.mic[1] - E.mic[0]) * (E.micN === 1 ? .5 : i / (E.micN - 1)); s += `<circle cx="${x}" cy="${my}" r="2.6" fill="#08090b" stroke="#555b62" stroke-width=".6"/>`; }
   for (let x = E.spk[0]; x <= E.spk[1]; x += 9) s += `<circle cx="${x}" cy="${my}" r="3.2" fill="#08090b" stroke="#555b62" stroke-width=".6"/>`;
   if (E.jack) s += `<circle cx="${E.jack}" cy="${my}" r="7" fill="#08090b" stroke="#6b737c" stroke-width="1.2"/><circle cx="${E.jack}" cy="${my}" r="4" fill="#1a1c20"/>`;
-  // 충전 포트
+  s += portSVG(dev, 180, my);
+  // 아랫면 나사 (예: 픽시스 화면 고정 나사)
+  if (E.screws) { const sid = E.screws.slot, sst = dev.slots[sid]; if (sst && sst.part && !sst.open) E.screws.xs.forEach((x, i) => { s += screwSVG(x, my, sst.screws[i], sid, i, true); }); }
+  s += labelSVG(180, T + 58, '아랫면 — 충전 포트 · 스피커 · 마이크' + (E.screws ? ' · 고정 나사' : ''), 10.5, '#cfe6e2');
+  return `<g class="devroot"><g class="phone edge">${s}</g></g>`;
+}
+function portSVG(dev, cx, my) {
   const pp = dev.slots.charge_port && dev.slots.charge_port.part;
   let port = `<rect x="150" y="${my - 12}" width="60" height="24" fill="transparent"/><rect x="160" y="${my - 6.5}" width="40" height="13" rx="6.5" fill="#030304" stroke="#8a9199" stroke-width="1.2"/>`;
   if (pp) {
@@ -387,11 +510,7 @@ function renderEdge(dev, opts = {}) {
     if (pp.fault === 'port_corroded') port += `<circle cx="172" cy="${my - 2}" r="1.6" fill="#5fb37a"/><circle cx="185" cy="${my + 2}" r="2" fill="#4c9d68"/><circle cx="191" cy="${my - 1}" r="1.3" fill="#7ac98f"/><circle cx="178" cy="${my + 3}" r="1.1" fill="#9ad8a7"/>`;
     if (pp.fault === 'port_broken') port += `<path d="M171 ${my} l6 -2 l5 3" stroke="#d6b35c" stroke-width="1.2" fill="none"/>`;
   } else port += labelSVG(180, my + 2.5, '비어 있음', 5.5, '#777');
-  s += `<g data-kind="port" class="porthot">${port}</g>`;
-  // 아랫면 나사 (예: 픽시스 화면 고정 나사)
-  if (E.screws) { const sid = E.screws.slot, sst = dev.slots[sid]; if (sst && sst.part && !sst.open) E.screws.xs.forEach((x, i) => { s += screwSVG(x, my, sst.screws[i], sid, i, true); }); }
-  s += labelSVG(180, T + 58, '아랫면 — 충전 포트 · 스피커 · 마이크' + (E.screws ? ' · 고정 나사' : ''), 10.5, '#cfe6e2');
-  return `<g class="devroot"><g class="phone edge">${s}</g></g>`;
+  return `<g data-kind="port" class="porthot" transform="translate(${cx - 180} 0)">${port}</g>`;
 }
 function wrapDevice(body, open, opts) { return `<g class="devroot">${open}<g class="phone">${body}</g></g>`; }
 function slotSVG(dev, sd, st, m, opts) {
@@ -400,7 +519,7 @@ function slotSVG(dev, sd, st, m, opts) {
   const edgeScr = m.edge && m.edge.screws && m.edge.screws.slot === sd.id;
   if (!edgeScr) (sd.screws || []).forEach(([x, y], i) => s += screwSVG(x, y, st.screws[i], sd.id, i, sd.type !== 'shield' && sd.type !== 'midplate' && sd.type !== 'mainboard'));
   const unknown = !(S.book[sd.type] && S.book[sd.type].lv >= 2);
-  const r = sd.hinge || sd.type === 'back_glass' || sd.type === 'back_cover' || sd.type.startsWith('display') ? 50 : (sd.round ? sd.w / 2 : 8);
+  const r = sd.hinge || sd.type === 'back_glass' || sd.type === 'back_cover' || sd.type.startsWith('display') ? 50 : sd.type === 'pad_shell_back' ? 70 : (sd.round ? sd.w / 2 : 8);
   let badge = '';
   if (unknown && opts.showUnknown !== false) badge = `<g class="unk"><circle cx="${sd.x + sd.w - 4}" cy="${sd.y + 4}" r="9" fill="#ffcc3a" stroke="#6b4d00"/>${labelSVG(sd.x + sd.w - 4, sd.y + 8, '?', 12, '#3a2a00', 'middle', 'font-weight="800"')}</g>`;
   return `<g class="part${opts.selected === sd.id ? ' sel' : ''}" data-kind="slot" data-id="${sd.id}">${s}<rect class="hl" fill="none" stroke="none" pointer-events="none" x="${sd.x}" y="${sd.y}" width="${sd.w}" height="${sd.h}" rx="${r}"/>${badge}</g>`;
@@ -416,14 +535,14 @@ function partIconSVG(type, size = 120) {
   if (type === 'fan') return `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><rect x="8" y="8" width="84" height="84" rx="12" fill="#222"/><circle cx="50" cy="50" r="36" fill="#111" stroke="#444"/>${[0, 60, 120, 180, 240, 300].map(a => `<path d="M50 50 Q${50 + 30 * Math.cos(a * Math.PI / 180)} ${50 + 30 * Math.sin(a * Math.PI / 180)} ${50 + 34 * Math.cos((a + 40) * Math.PI / 180)} ${50 + 34 * Math.sin((a + 40) * Math.PI / 180)}" stroke="#666" stroke-width="7" fill="none"/>`).join('')}<circle cx="50" cy="50" r="9" fill="url(#gMetal)"/></svg>`;
   if (type === 'ssd') return `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><rect x="10" y="38" width="80" height="24" rx="2" fill="#1d3a56" stroke="#c9a24a"/><rect x="20" y="42" width="26" height="16" fill="#111"/><rect x="52" y="42" width="26" height="16" fill="#111"/><rect x="82" y="42" width="8" height="16" fill="#d6b45a"/></svg>`;
   let found = null;
-  for (const mid of ['nova', 'pixis', 'lumen']) { const sd = MODELS[mid].slots.find(s => s.type === type); if (sd) { found = { m: MODELS[mid], sd }; break; } }
+  for (const mid of MODEL_IDS) { const sd = MODELS[mid].slots.find(s => s.type === type); if (sd) { found = { m: MODELS[mid], sd }; break; } }
   if (!found) return '';
   const { m, sd } = found;
   const fakeDev = { modelId: m.id, slots: {}, conns: {}, lciRed: false, serial: m.code + '-000000' };
   m.slots.forEach(s => fakeDev.slots[s.id] = { part: null });
   const p = { uid: 'icon', origin: 'original', grade: '정품', type, fault: null };
   const st = { adhesive: 'cut', screws: [], cut: [] };
-  const pad = 10; const vb = sd.type.startsWith('display') || sd.type.startsWith('back') ? `-10 -10 380 780` : `${sd.x - pad} ${sd.y - pad} ${sd.w + pad * 2} ${sd.h + pad * 2}`;
+  const pad = 10; const vb = sd.type === 'pad_shell_back' ? '-10 -10 500 340' : sd.type.startsWith('display') || sd.type.startsWith('back') ? `-10 -10 380 780` : `${sd.x - pad} ${sd.y - pad} ${sd.w + pad * 2} ${sd.h + pad * 2}`;
   const inner = sd.type.startsWith('display') ? drawDisplayFront(sd, p, st, m, fakeDev) : (DRAW[sd.type] || DRAW.shield)(sd, p, st, m, fakeDev);
   return `<svg viewBox="${vb}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
 }

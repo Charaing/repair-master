@@ -9,6 +9,7 @@ const APPS = [
   { id: 'records', name: '수리 기록', icon: '🗂', title: '수리 기록 검색' },
   { id: 'inv', name: '재고 관리', icon: '📦', title: '재고 관리' },
   { id: 'acct', name: '회계', icon: '💰', title: '회계 장부' },
+  { id: 'bank', name: '은행·대출', icon: '🏦', title: '새싹저축은행 — 사업자 대출' },
   { id: 'mgmt', name: '매장·커리어', icon: '🏪', title: '매장 운영 · 직원 성장' },
   { id: 'sys', name: '설정', icon: '⚙', title: '시스템 · 저장 관리' }
 ];

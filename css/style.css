@@ -111,6 +111,10 @@ h1, h2, h3, h4 { margin: .6em 0 .4em; }
 .sm-h { font-weight: 700; margin-bottom: 4px; } .sm-h small { color: var(--muted); font-weight: 400; margin-left: 4px; }
 .sm-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; } .sm-row > span:first-child { flex: 1; min-width: 0; }
 .sm-dots i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f2f4f6, #8c939b); margin-right: 2px; box-shadow: 0 1px 1px #0008; }
+.pick-item.cur { outline: 2px solid var(--amber); }
+.loan-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.loan-card { background: #f6f8fa; color: #1d2329; border: 1px solid #d3d9df; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 4px; } .loan-card.off { opacity: .55; } .loan-card .lc-h { font-size: 15px; } .loan-card .row { display: flex; gap: 6px; margin-top: 4px; } .loan-card select { flex: 1; }
+.nowrap { white-space: nowrap; }
 .consum { margin-top: 10px; font-size: 13px; color: var(--muted); }
 .drag-ghost { position: fixed; z-index: 200; pointer-events: none; transform: translate(-50%, -50%) scale(1.2); opacity: .9; filter: drop-shadow(0 6px 10px #000); }
 .tests { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }

@@ -15,7 +15,7 @@ function openBench(ticketId) {
   const tk = WB.tk;
   if (!tk) { UI.toast('📋', '작업할 의뢰가 없습니다. 먼저 손님을 접수하세요.'); return; }
   UI.show('bench');
-  WB.selected = null; WB.vb = null; WB.tool = toolUsable(WB.tool) ? WB.tool : 'hand';
+  WB.selected = null; WB.vb = null; WB.faceView = null; WB.tool = toolUsable(WB.tool) ? WB.tool : 'hand';
   WB.msg('기기를 작업대에 올렸습니다. 왼쪽 도구를 고르고 부품을 직접 조작하세요. (휠/핀치: 확대, 드래그: 이동)', 'info');
   WB.render();
   Bus.emit('act', { type: 'benchOpen' });
@@ -26,7 +26,8 @@ WB.msg = function (t, type) { t = fixJosa(t); WB.lastMsg = t; WB.msgType = type 
 
 WB.baseVB = function () {
   const dev = WB.dev; const m = MODELS[dev.modelId];
-  if (dev.view === 'bottom') return { x: -30, y: -130, w: 420, h: 330 };
+  if (dev.view === 'bottom') return m.cat === 'pad' ? { x: -30, y: -120, w: 540, h: 300 } : { x: -30, y: -130, w: 420, h: 330 };
+  if (m.vb) return { ...m.vb };
   const open = m.slots.some(sd => sd.hinge && dev.slots[sd.id].part && dev.slots[sd.id].open && sd.side === dev.view);
   return open ? { x: -440, y: -110, w: 840, h: 980 } : { x: -50, y: -110, w: 460, h: 980 };
 };
@@ -46,8 +47,10 @@ WB.render = function () {
   const prevBase = WB._base; const nb = WB.baseVB();
   if (!WB.vb || !prevBase || prevBase.x !== nb.x) WB.vb = nb;
   WB._base = nb; WB.applyVB();
-  $('#sideLabel').textContent = ({ back: '뒷면', front: '앞면', bottom: '아랫면' }[dev.view]) + ' · ' + MODELS[dev.modelId].name;
+  const M = MODELS[dev.modelId], edgeName = M.edgeName || '아랫면';
+  $('#sideLabel').textContent = ({ back: '뒷면', front: '앞면', bottom: edgeName }[dev.view]) + ' · ' + M.name;
   $('#stage').dataset.tool = WB.tool; $('#btnEdge').classList.toggle('on', dev.view === 'bottom');
+  $('#btnEdge').textContent = (M.cat === 'pad' ? '⤴ ' : '⤵ ') + edgeName;
   // 도구
   $('#toolRail').innerHTML = TOOL_ORDER.filter(k => hasTool(k)).map(k => {
     const t = TOOLS[k]; let name = t.name, dur = '';
@@ -68,7 +71,7 @@ WB.render = function () {
 };
 WB.discoverVisible = function () {
   const dev = WB.dev; const m = MODELS[dev.modelId]; const found = [];
-  m.slots.forEach(sd => { if (sd.side === dev.view && dev.slots[sd.id].part && isAccessible(dev, sd.id) && !(m.backFixed && dev.view === 'back')) { if (discover(sd.type, 1)) found.push(sd.type); } });
+  m.slots.forEach(sd => { if (sd.side === dev.view && dev.slots[sd.id].part && isAccessible(dev, sd.id) && !(m.backFixed && dev.view === 'back') && !(m.frontFixed && dev.view === 'front')) { if (discover(sd.type, 1)) found.push(sd.type); } });
   if (found.length) { UI.toast('✨', '새로운 부품을 발견했습니다! 클릭해서 무엇인지 확인해 보세요.'); WB.msg('새로운 부품을 발견했습니다! (노란 ? 표시) 부품을 클릭하면 이름과 기초 설명이 교과서에 기록됩니다.', 'good'); }
 };
 
@@ -93,7 +96,7 @@ WB.renderSide = function () {
     const showHints = skillLv('diag') >= 2 || (S.tut.active && tk.tutorial);
     box.innerHTML = `<div class="panel-head"><h3>진단 검사</h3><span class="muted">${pro ? '진단 보드' : 'USB 전류 측정기'}</span></div>
       <p class="hint">검사는 <b>현재 기기 상태 그대로</b> 실행됩니다. 분해 중이라면 빠진 부품·분리된 커넥터도 결과에 반영됩니다.</p>
-      <div class="tests">${TESTS.map(t => `<button class="test" data-test="${t.id}"><i>${t.icon}</i>${t.name}<small>${t.min}분</small></button>`).join('')}</div>
+      <div class="tests">${TESTS.filter(t => !t.cat || t.cat === devCat(WB.dev.modelId)).map(t => `<button class="test" data-test="${t.id}"><i>${t.icon}</i>${t.name}<small>${t.min}분</small></button>`).join('')}</div>
       <div class="diag-actions"><button class="btn" id="btnSwReinstall">💾 소프트웨어 재설치 (40분)</button><button class="btn" id="btnSenior">🧑‍🔧 박 선임에게 묻기</button><button class="btn primary" id="btnQC">✅ 최종 기능 점검</button></div>
       <div class="diaglog">${tk.diagLog.slice().reverse().map(d => `<div class="dl-entry"><div class="dl-h">${d.icon || ''} ${esc(d.name)} <small>${fmtClock(d.t)}</small></div>${d.lines.map(l => `<div class="dl-line ${l.c}">${esc(l.t)}</div>`).join('')}${showHints ? d.hints.map(h => `<div class="dl-hint">💡 ${esc(h)}</div>`).join('') : ''}</div>`).join('') || '<div class="empty">아직 실행한 검사가 없습니다.</div>'}</div>
       ${!showHints ? '<p class="muted small">진단 능력 Lv2가 되면 검사 결과 해석 힌트가 표시됩니다.</p>' : ''}`;
@@ -145,8 +148,9 @@ WB.toolHelp = function () {
 WB.click = function (kind, id) {
   const dev = WB.dev; const tool = WB.tool;
   if (!toolUsable(tool)) { WB.msg(TOOLS[tool].name + '이(가) 닳아서 쓸 수 없습니다. 컴퓨터의 장비몰에서 새로 사세요.', 'bad'); return; }
+  if (kind === 'frontfixed') { WB.msg('앞면 쉘은 열 필요가 없습니다. 버튼·스틱 부품은 모두 뒷면 쉘을 열면 나옵니다. 뒤집어서 뒷면 나사부터 푸세요.', 'info'); return; }
   if (kind === 'backfixed') { WB.msg('픽시스 S3는 후면 글라스가 프레임과 일체형이라 뒤로는 열 수 없습니다. 기기를 뒤집어 앞면(화면)으로 분해하세요.', 'warn'); return; }
-  if (dev.view === 'bottom' && kind !== 'port' && kind !== 'screw') return WB.msg('아랫면에서는 충전 포트와 나사만 다룰 수 있습니다. ⤵ 버튼으로 다시 눕히세요.', 'info');
+  if (dev.view === 'bottom' && kind !== 'port' && kind !== 'screw') return WB.msg((MODELS[dev.modelId].edgeName || '아랫면') + '에서는 충전 포트와 나사만 다룰 수 있습니다. 같은 버튼을 다시 눌러 눕히세요.', 'info');
   if (kind === 'slot') { WB.select(id); }
   if (tool === 'magnifier') return WB.inspect(kind, id);
   switch (kind) {
@@ -178,7 +182,7 @@ WB.handSlot = function (sid) {
   if (!st.part) return;
   if (sd.hinge && st.open) {
     const anyConn = slotConns(dev, sid).some(c => dev.conns[c.id].on && connPresent(dev, c));
-    if (anyConn) return WB.closeHinge(sid);
+    if (anyConn) { const names = slotConns(dev, sid).filter(c => dev.conns[c.id].on && connPresent(dev, c)).map(c => c.label).join(', '); return UI.choice('화면(디스플레이)', '화면을 완전히 떼어내려면 먼저 스퍼저로 커넥터를 분리해야 합니다 (' + names + '). 지금은 닫기만 할 수 있어요.', [['화면 닫기', () => WB.closeHinge(sid)], ['그대로 두기', () => WB.msg('스퍼저를 고르고 화면 쪽 커넥터를 클릭해 분리하세요: ' + names, 'info')]]); }
     UI.choice('화면(디스플레이)', '열려 있는 화면을 어떻게 할까요?', [['닫기', () => WB.closeHinge(sid)], ['완전히 떼어내기', () => WB.removeNow(sid)]]);
     return;
   }
@@ -232,11 +236,12 @@ WB.holdScrew = function (id, el) {
   const turns = tighten ? 3 : 4;
   const dur = S.tools.driver_e ? 380 : Math.max(520, 1250 - lv * 110);
   const NS = 'http://www.w3.org/2000/svg';
-  const body = el.querySelector('circle:nth-of-type(2)'); if (!body) return null;
+  WB.unwrapScrew(el);
+  const body = el.children[1]; if (!body || body.tagName !== 'circle') return null;
   const cx = +body.getAttribute('cx'), cy = +body.getAttribute('cy'), r = +body.getAttribute('r');
-  const head = document.createElementNS(NS, 'g'); [...el.children].slice(1).forEach(c => head.appendChild(c)); el.appendChild(head);
+  const head = document.createElementNS(NS, 'g'); head.setAttribute('class', 'sc-head'); [...el.children].slice(1).forEach(c => head.appendChild(c)); el.appendChild(head);
   const C = 2 * Math.PI * (r + 5);
-  const ring = document.createElementNS(NS, 'circle');
+  const ring = document.createElementNS(NS, 'circle'); ring.setAttribute('class', 'sc-ring');
   Object.entries({ cx, cy, r: r + 5, fill: 'none', stroke: tighten ? '#7ff0c0' : '#ffd36b', 'stroke-width': 2.6, 'stroke-dasharray': C, 'stroke-dashoffset': C, transform: `rotate(-90 ${cx} ${cy})`, 'pointer-events': 'none' }).forEach(([k, v]) => ring.setAttribute(k, v));
   el.appendChild(ring);
   const t0 = performance.now(); let raf = 0, done = false, cancelled = false;
@@ -258,11 +263,16 @@ WB.holdScrew = function (id, el) {
     cancel() {
       if (done) return;
       if (performance.now() - t0 >= dur) return finish();
-      cancelled = true; clearTimeout(timer); cancelAnimationFrame(raf); ring.parentNode && ring.parentNode.removeChild(ring); head.removeAttribute('transform');
+      cancelled = true; clearTimeout(timer); cancelAnimationFrame(raf); ring.parentNode && ring.parentNode.removeChild(ring); WB.unwrapScrew(el);
       const k = Math.min(1, (performance.now() - t0) / dur);
       WB.msg(k < 0.12 ? '나사는 드라이버를 꾹 누르고 있어야 돌아갑니다. (짧게 누르면 돌아가지 않아요)' : '드라이버를 중간에 뗐습니다. 나사가 ' + (tighten ? '덜 조여진' : '아직 다 풀리지 않은') + ' 상태입니다. 처음부터 다시 돌리세요.', 'warn');
     }
   };
+};
+/* 돌리던 나사 그림을 원래 구조로 되돌린다 (취소 후 다시 누를 수 있게) */
+WB.unwrapScrew = function (el) {
+  [...el.querySelectorAll(':scope > g.sc-head')].forEach(h => { while (h.firstChild) el.insertBefore(h.firstChild, h); h.remove(); });
+  [...el.querySelectorAll(':scope > circle.sc-ring')].forEach(r => r.remove());
 };
 WB.screwAll = function (sid) {
   const dev = WB.dev, st = dev.slots[sid];
@@ -435,6 +445,7 @@ WB.toEdge = function () {
     if (dev.view === 'bottom') dev.view = WB.faceView || MODELS[dev.modelId].openSide;
     else { WB.faceView = dev.view; dev.view = 'bottom'; }
     WB.selected = null; WB.vb = null; WB.render();
+    if (MODELS[dev.modelId].cat === 'pad') WB.msg(dev.view === 'bottom' ? '컨트롤러를 세워 윗면(충전 포트·트리거 쪽)을 봅니다. 포트 안쪽은 확대경으로 살펴보고 브러시로 청소할 수 있습니다.' : '다시 눕혔습니다.', 'info'); else
     WB.msg(dev.view === 'bottom' ? '폰을 세워 아랫면을 봅니다. 충전 포트 안쪽은 확대경으로 살펴보고, 브러시로 청소할 수 있습니다.' + (MODELS[dev.modelId].edge.screws ? ' 포트 양옆의 고정 나사는 드라이버로 풉니다.' : '') : '다시 눕혔습니다.', 'info');
     WB.flipping = false;
     Bus.emit('act', { type: 'edge', view: dev.view });
@@ -534,6 +545,7 @@ function initBenchInput() {
   $('#btnFlip').onclick = WB.flip;
   $('#btnZin').onclick = () => WB.zoom(0.8); $('#btnZout').onclick = () => WB.zoom(1.25); $('#btnFit').onclick = WB.fit;
   $('#btnBenchClose').onclick = closeBench;
+  $('#btnBenchSwitch').onclick = () => UI.pickBenchTicket(true);
   $('#btnBenchBook').onclick = () => UI.openBook(WB.selected ? mSlot(WB.dev, WB.selected).type : null);
   $('#btnBenchStock').onclick = () => WB.fromStock();
   $('#btnSheet').onclick = () => document.body.classList.toggle('sheet-open');
