@@ -114,7 +114,7 @@ DRAW.back_glass = (sd, p, st, m, dev) => {
   s += `<circle cx="113" cy="48" r="6" fill="#f2e7c9" stroke="#999"/><circle cx="113" cy="152" r="4" fill="#1a1a1a"/>`;
   const cam = partOf(dev, 'camera_rear'); if (cam && cam.cracked) s += crackSVG(60, 138, 77, .45, { r: 24 });
   s += labelSVG(180, 420, m.brand, 26, '#c9d6ee', 'middle', 'letter-spacing="10" font-weight="300" opacity=".85"');
-  s += labelSVG(180, 690, 'Model ' + m.code, 25, '#9fb0cc', 'middle', 'font-weight="800" letter-spacing="1.5" opacity=".9"') + labelSVG(180, 714, 'S/N ' + (dev ? dev.serial : ''), 11, '#9fb0cc', 'middle', 'opacity=".7"');
+  s += labelSVG(180, 694, 'Model ' + m.code, 34, '#9fb0cc', 'middle', 'font-weight="800" letter-spacing="1.5" opacity=".9"') + labelSVG(180, 714, 'S/N ' + (dev ? dev.serial : ''), 11, '#9fb0cc', 'middle', 'opacity=".7"');
   s += labelSVG(180, 724, 'Designed by ' + m.brand + ' · 가상 브랜드', 7.5, '#9fb0cc', 'middle', 'opacity=".55"');
   if (p.cracked) s += crackSVG(250, 560, 33, 1.1);
   const b = partOf(dev, 'battery');
@@ -129,7 +129,7 @@ DRAW.back_cover = (sd, p, st, m, dev) => {
   s += `<circle cx="56" cy="148" r="4" fill="#f3ead0"/>`;
   s += `<circle cx="180" cy="210" r="27" fill="${c.back2}" stroke="#244" stroke-width="2"/><circle cx="180" cy="210" r="21" fill="none" stroke="#1d3d34" stroke-width="1" stroke-dasharray="3 2"/>`;
   s += labelSVG(180, 610, m.brand, 22, '#bfe8d9', 'middle', 'letter-spacing="8" opacity=".75"');
-  s += labelSVG(180, 690, 'Model ' + m.code, 25, '#bfe8d9', 'middle', 'font-weight="800" letter-spacing="1.5" opacity=".9"') + labelSVG(180, 714, 'S/N ' + (dev ? dev.serial : ''), 11, '#bfe8d9', 'middle', 'opacity=".6"');
+  s += labelSVG(180, 694, 'Model ' + m.code, 34, '#bfe8d9', 'middle', 'font-weight="800" letter-spacing="1.5" opacity=".9"') + labelSVG(180, 714, 'S/N ' + (dev ? dev.serial : ''), 11, '#bfe8d9', 'middle', 'opacity=".6"');
   const cam = partOf(dev, 'camera_rear'); if (cam && cam.cracked) s += crackSVG(56, 62, 91, .35, { r: 20 });
   const b = partOf(dev, 'battery');
   if (b && b.swollen) s += `<ellipse cx="180" cy="450" rx="120" ry="150" fill="url(#gSwell)"/><path d="M356 300 Q362 450 356 600" stroke="#fff" stroke-width="2" opacity=".5" fill="none"/>`;
@@ -140,7 +140,7 @@ DRAW.back_fixed = (m, dev) => {
   s += `<rect x="22" y="22" width="100" height="120" rx="26" fill="#cfc6b8" stroke="#a79c8c"/>` + lensSVG(56, 58, 16) + lensSVG(56, 108, 14) + `<circle cx="98" cy="50" r="5" fill="#fff6dc" stroke="#999"/>`;
   const cam = partOf(dev, 'camera_rear'); if (cam && cam.cracked) s += crackSVG(56, 58, 51, .4, { r: 20 });
   s += labelSVG(180, 400, m.brand, 24, '#8c8170', 'middle', 'letter-spacing="9" opacity=".8"');
-  s += labelSVG(180, 690, 'Model ' + m.code, 25, '#8c8170', 'middle', 'font-weight="800" letter-spacing="1.5" opacity=".9"') + labelSVG(180, 714, 'S/N ' + (dev ? dev.serial : ''), 11, '#8c8170', 'middle', 'opacity=".8"');
+  s += labelSVG(180, 694, 'Model ' + m.code, 34, '#8c8170', 'middle', 'font-weight="800" letter-spacing="1.5" opacity=".9"') + labelSVG(180, 714, 'S/N ' + (dev ? dev.serial : ''), 11, '#8c8170', 'middle', 'opacity=".8"');
   s += labelSVG(180, 738, '후면 글라스 일체형 — 분해 불가', 8, '#8c8170', 'middle', 'opacity=".7"');
   return `<g data-kind="backfixed">${s}</g>`;
 };

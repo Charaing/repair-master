@@ -431,16 +431,14 @@ WB.flip = function () {
 };
 WB.toEdge = function () {
   const dev = WB.dev; if (WB.flipping) return; WB.flipping = true;
-  const st = $('#stage'); st.classList.add('tilt-out');
-  setTimeout(() => {
+  {
     if (dev.view === 'bottom') dev.view = WB.faceView || MODELS[dev.modelId].openSide;
     else { WB.faceView = dev.view; dev.view = 'bottom'; }
     WB.selected = null; WB.vb = null; WB.render();
     WB.msg(dev.view === 'bottom' ? '폰을 세워 아랫면을 봅니다. 충전 포트 안쪽은 확대경으로 살펴보고, 브러시로 청소할 수 있습니다.' + (MODELS[dev.modelId].edge.screws ? ' 포트 양옆의 고정 나사는 드라이버로 풉니다.' : '') : '다시 눕혔습니다.', 'info');
-    st.classList.remove('tilt-out'); st.classList.add('tilt-in');
-    setTimeout(() => { st.classList.remove('tilt-in'); WB.flipping = false; }, 260);
+    WB.flipping = false;
     Bus.emit('act', { type: 'edge', view: dev.view });
-  }, 240);
+  }
 };
 WB.fromStock = function () {
   const dev = WB.dev; const m = MODELS[dev.modelId];
@@ -467,7 +465,9 @@ WB.hitSeg = function (pt) {
 };
 function initBenchInput() {
   const svg = $('#devSvg'); const ptrs = new Map(); let start = null, pinch = null;
+  ['contextmenu', 'selectstart', 'dragstart', 'copy'].forEach(ev => $('#stage').addEventListener(ev, e => e.preventDefault()));
   svg.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button === 0) e.preventDefault(); // 텍스트 선택·드래그 방지
     try { svg.setPointerCapture(e.pointerId); } catch (err) { } ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ptrs.size === 2) { if (start && start.hold && !start.hold.done) start.hold.cancel(); const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), vb: { ...WB.vb } }; start = null; return; }
     const tgt = e.target.closest('[data-kind]');

@@ -237,11 +237,12 @@ UI.openCounter = function () {
     if (!c && ready.length) { $$('.counter-tabs button', b)[1].click(); } else renderQ();
   }, { size: 'lg' });
 };
-UI.devPreview = function (dev, side) { const v = dev.view; dev.view = side; const h = renderDevice(dev, { showUnknown: false }); dev.view = v; return `<svg viewBox="-20 -20 400 800" class="dev-prev">${h}</svg>`; };
+UI.devPreview = function (dev, side, vb) { const v = dev.view; dev.view = side; const h = renderDevice(dev, { showUnknown: false }); dev.view = v; return `<svg viewBox="${vb || '-20 -20 400 800'}" class="dev-prev">${h}</svg>`; };
 UI.intakeForm = function (c) {
   const dev = c.device;
-  UI.modal('📋 수리 접수서 — ' + esc(c.name) + ' 님', `<div class="intake">
-    <div class="prevs"><figure>${UI.devPreview(dev, 'front')}<figcaption>앞면</figcaption></figure><figure>${UI.devPreview(dev, 'back')}<figcaption>뒷면 (모델명 확인)</figcaption></figure></div>
+  UI.modal('📋 수리 접수서 — ' + esc(c.name) + ' 님', `<div class="intake"><div class="prev-col">
+    <div class="prevs"><figure>${UI.devPreview(dev, 'front')}<figcaption>앞면</figcaption></figure><figure>${UI.devPreview(dev, 'back')}<figcaption>뒷면</figcaption></figure></div>
+    <figure class="label-zoom">${UI.devPreview(dev, 'back', '30 650 300 80')}<figcaption>🔍 뒷면 아래쪽 확대 — 모델 코드 확인</figcaption></figure></div>
     <div class="form">
       <label>기기 모델 <small class="muted">— 뒷면 아래쪽의 Model 코드를 확인하세요</small><select id="fModel"><option value="">선택…</option>${MODEL_IDS.map(id => `<option value="${id}">${MODELS[id].name} (${MODELS[id].code}) — ${MODELS[id].tier}</option>`).join('')}</select></label>
       <fieldset><legend>외관 상태 점검</legend>
