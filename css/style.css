@@ -146,7 +146,7 @@ blockquote { margin: 10px 0; padding: 8px 12px; background: #1b2026; border-left
 .pick-list { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; }
 .pick-item { display: flex; align-items: center; gap: 10px; background: #1b2026; border: 1px solid var(--line); border-radius: 10px; padding: 8px; color: var(--text); text-align: left; cursor: pointer; font-size: 14px; } .pick-item > span { flex: 1; }
 .pick-item.fit { border-color: #2f8f5a; } .pick-item.nofit { opacity: .7; } .pick-item:hover { border-color: var(--amber); }
-.intake { display: grid; grid-template-columns: 300px 1fr; gap: 16px; }
+.intake { display: grid; grid-template-columns: 360px 1fr; gap: 16px; }
 .prevs { display: flex; gap: 8px; } .prevs figure { margin: 0; flex: 1; text-align: center; background: #0e2a27; border-radius: 10px; padding: 6px; } .prevs figcaption { font-size: 12px; color: var(--muted); }
 .dev-prev { width: 100%; height: auto; max-height: 300px; }
 .form label { display: block; margin: 8px 0; font-size: 13.5px; } .form select, .form input:not([type=checkbox]), .form textarea { width: 100%; margin-top: 4px; }
