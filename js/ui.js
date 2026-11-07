@@ -472,7 +472,7 @@ UI.pullTab = function (cb) {
 UI.restartGame = function () {
   UI.choice('🔄 새로 시작', '정말 지금까지의 진행(돈·재고·의뢰·기록)을 모두 지우고 처음부터 새로 시작할까요? 되돌릴 수 없습니다. 필요하면 먼저 컴퓨터 → 설정에서 세이브를 내보내 두세요.', [['새로 시작', () => {
     try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
-    WB.dev = null; WB.tk = null; Computer.app = null;
+    Computer.app = null; WB.selected = null; WB.vb = null;
     newGame(); UI.show('shop'); TUT.render(true); UI.hud(); UI.toast('🔄', '새 게임을 시작했습니다. 1일차 아침입니다.');
   }], ['취소', () => { }]]);
 };
