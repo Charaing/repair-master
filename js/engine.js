@@ -31,7 +31,7 @@ function newState() {
     tools: { hand: 1, driver: 1, spudger: 80, pick: 40, heater: 1, tweezers: 1, magnifier: 1, brush: 1, tester: 1 },
     upgrades: {}, inv: [], consum: { adhesive: 6 }, scrap: [], minStock: {},
     orders: [], cart: [], packages: [], market: {}, vstock: {},
-    queue: [], arrivals: [], tickets: [], records: [], comebacks: [], ledger: [], loans: [], loanHist: [],
+    queue: [], arrivals: [], tickets: [], records: [], comebacks: [], ledger: [], loans: [], loanHist: [], reviews: [], news: [], mkt: null, shopLv: 0, staff: { hired: {}, vendor: 'normal', cap: 300000 },
     book: {}, flags: {}, tut: { step: 0, active: true, done: false, practice: false },
     bench: null, nextTicket: 1, uid: 1, nextOrder: 1, nextCust: 1,
     dayLog: { rev: 0, exp: 0, repairs: 0 }, history: []
@@ -76,7 +76,7 @@ function processTime() {
   const arrived = S.arrivals.filter(a => a.t <= S.t);
   if (arrived.length) {
     S.arrivals = S.arrivals.filter(a => a.t > S.t);
-    arrived.forEach(a => { a.cust.arriveT = a.t; a.cust.leaveT = a.t + 200; S.queue.push(a.cust); Bus.emit('toast', { icon: '🔔', text: a.cust.name + ' 님이 방문했습니다.' }); });
+    arrived.forEach(a => { a.cust.arriveT = a.t; a.cust.leaveT = a.t + 200 + (albaDoes('greet') ? 120 : 0); S.queue.push(a.cust); Bus.emit('toast', { icon: '🔔', text: a.cust.name + ' 님이 방문했습니다.' }); });
     Bus.emit('queue');
   }
   // 워크인 손님: 영업 시간에 예약된 손님도, 기다리는 손님도 없으면 잠시 뒤 새 손님이 들른다
@@ -92,9 +92,10 @@ function processTime() {
   S.orders.forEach(o => {
     if (!o.delivered && o.arriveT <= S.t) {
       o.delivered = true; S.packages.push(o.id);
-      Bus.emit('toast', { icon: '📦', text: VENDORS[o.vendor].name + ' 택배가 도착했습니다! (주문 ' + o.id + ')' });
+      if (!albaDoes('unbox')) Bus.emit('toast', { icon: '📦', text: VENDORS[o.vendor].name + ' 택배가 도착했습니다! (주문 ' + o.id + ')' });
     }
   });
+  bizTick();
 }
 
 /* ---------- 경험치 · 스킬 ---------- */
@@ -147,7 +148,7 @@ function refPrice(sku) { return vendorPrice(sku, 'normal'); }
 function shipFee(v) { return Math.round(VENDORS[v].ship * (1 - Math.min(0.4, 0.1 * skillLv('parts')))); }
 
 /* ---------- 주문 · 배송 ---------- */
-function placeOrder(express) {
+function placeOrder(express, quiet) {
   if (!S.cart.length) return { ok: false, msg: '장바구니가 비어 있습니다.' };
   const byV = {};
   S.cart.forEach(c => (byV[c.vendor] = byV[c.vendor] || []).push(c));
@@ -161,20 +162,22 @@ function placeOrder(express) {
     total += sub + fee; orders.push({ v, items, sub, fee, ex });
   }
   if (total > S.money) return { ok: false, msg: '매장 자금이 부족합니다. (필요 ' + WON(total) + ')' };
+  const made = [];
   orders.forEach(o => {
     const id = 'O-' + String(S.nextOrder++).padStart(4, '0');
     let arriveT;
     if (o.ex) {
       arriveT = minOfDay() < 15 * 60 ? S.t + 180 : (dayIdx() + 1) * DAY + 10 * 60;
     } else {
-      const [a, b] = VENDORS[o.v].days;
-      arriveT = (dayIdx() + R.int(a, b)) * DAY + R.int(10 * 60, 17 * 60);
+      arriveT = shipArrive();
     }
     o.items.forEach(i => S.vstock[i.sku + '|' + o.v] -= i.qty);
     S.orders.push({ id, vendor: o.v, items: o.items, fee: o.fee, sub: o.sub, express: o.ex, placedT: S.t, arriveT, delivered: false, opened: false });
-    pay(o.sub + o.fee, '부품 매입', id + ' ' + VENDORS[o.v].name + ' (배송비 ' + WON(o.fee) + ' 포함)');
+    pay(o.sub + o.fee, '부품 매입', id + ' ' + VENDORS[o.v].name + ' (배송비 ' + WON(o.fee) + ' 포함)' + (quiet ? ' [알바 주문]' : ''));
+    made.push(id);
   });
   S.cart = [];
+  if (quiet) return { ok: true, msg: made.join(', ') + ' 주문 (총 ' + WON(total) + ')' };
   addXP('parts', 4 * orders.length);
   advance(3, '주문');
   return { ok: true, msg: orders.length + '건의 주문이 접수되었습니다. 총 ' + WON(total) };
@@ -185,7 +188,9 @@ function orderStage(o) {
   const f = (S.t - o.placedT) / Math.max(1, o.arriveT - o.placedT);
   return f < 0.12 ? 0 : f < 0.35 ? 1 : f < 0.55 ? 2 : 3;
 }
-function unbox(orderId) {
+/* 배송: 업체·등급과 관계없이 1~2일 뒤 영업 시간 중 도착 */
+function shipArrive() { return (dayIdx() + R.int(1, 2)) * DAY + R.int(10 * 60, 17 * 60); }
+function unbox(orderId, quiet) {
   const o = S.orders.find(x => x.id === orderId); if (!o || o.opened) return [];
   o.opened = true; S.packages = S.packages.filter(x => x !== orderId);
   const out = [];
@@ -202,7 +207,7 @@ function unbox(orderId) {
   const adh = o.items.filter(i => i.sku === 'adhesive').reduce((s, i) => s + i.qty, 0);
   if (adh) out.push({ adhesive: adh });
   addXP('parts', 3 + out.length);
-  advance(2, '택배 개봉');
+  if (!quiet) advance(2, '택배 개봉');
   return out;
 }
 function returnItem(uid) {
@@ -219,9 +224,8 @@ function claimExchange(p, whereArr) {
   if (p.exchangeChecked) return { ok: false, msg: '이미 판매자 검수에서 정상 판정을 받은 부품입니다.' };
   if (p.defect) {
     whereArr.splice(whereArr.indexOf(p), 1);
-    const [a, b] = VENDORS[p.vendor].days;
     const id = 'O-' + String(S.nextOrder++).padStart(4, '0');
-    S.orders.push({ id, vendor: p.vendor, items: [{ sku: p.sku, qty: 1, unit: p.cost }], fee: 0, sub: 0, placedT: S.t, arriveT: (dayIdx() + R.int(a, b)) * DAY + R.int(10 * 60, 16 * 60), delivered: false, opened: false, free: true });
+    S.orders.push({ id, vendor: p.vendor, items: [{ sku: p.sku, qty: 1, unit: p.cost }], fee: 0, sub: 0, placedT: S.t, arriveT: shipArrive(), delivered: false, opened: false, free: true });
     addXP('parts', 8);
     return { ok: true, msg: '판매자 검수 결과: 초기 불량 확인. 교환품이 발송됩니다 (' + id + ').' };
   }
@@ -488,7 +492,7 @@ const QUESTIONS = [
 ];
 
 /* ---------- 의뢰(티켓) ---------- */
-function shelfCap() { return S.upgrades.shelf ? 7 : 4; }
+function shelfCap() { return (S.upgrades.shelf ? 7 : 4) + shopLoc().shelf; }
 function createTicket(cust, form) {
   const id = 'R-' + String(S.nextTicket++).padStart(4, '0');
   const tk = {
@@ -513,7 +517,7 @@ function createTicket(cust, form) {
 function benchTicket() { return S && S.bench ? S.tickets.find(t => t.id === S.bench) : null; }
 function customerDecide(tk, total, isAdd) {
   const lv = skillLv('consult');
-  const budget = tk.budget * (1 + 0.04 * lv) * (S.upgrades.sofa ? 1.03 : 1);
+  const budget = tk.budget * (1 + 0.04 * lv) * (S.upgrades.sofa ? 1.03 : 1) * (tk.tutorial ? 1 : shopLoc().budget);
   const prev = isAdd ? tk.quote.total : 0;
   const ratio = total / budget;
   if (tk.tutorial && ratio <= 1.6) return { res: 'accept', text: '네, 그렇게 해주세요! 잘 부탁드려요.' };
@@ -850,6 +854,7 @@ function closeTicket(tk, forceFail) {
     warrantyUntil: success && !rejected ? S.t + 30 * DAY : null, sat, warranty: tk.warranty, feedback: fb, hints: tk.hints
   };
   S.records.unshift(rec);
+  addReview(rec, tk);
   S.tickets = S.tickets.filter(x => x !== tk);
   if (S.bench === tk.id) S.bench = null;
   advance(5, '반환');
@@ -873,8 +878,8 @@ function walkIn() {
 /* ---------- 하루 처리 ---------- */
 function scheduleDay() {
   const d = dayIdx();
-  let n = 2 + (S.rep >= 3.6 ? 1 : 0) + (S.rep >= 4.4 ? 1 : 0) + (S.upgrades.sign ? 1 : 0) + R.int(-1, 1) - (S.rep < 2 ? 1 : 0);
-  n = clamp(n, 1, 6);
+  let n = 2 + (S.rep >= 3.6 ? 1 : 0) + (S.rep >= 4.4 ? 1 : 0) + (S.upgrades.sign ? 1 : 0) + shopLoc().cust + reviewCustBonus() + newsCustBonus(d) + R.int(-1, 1) - (S.rep < 2 ? 1 : 0);
+  n = clamp(n, 1, 10);
   const times = []; for (let i = 0; i < n; i++) times.push(d * DAY + R.int(9 * 60 + 20, 17 * 60 + 30));
   times.sort((a, b) => a - b).forEach(t => S.arrivals.push({ t, cust: genCustomer() }));
   // 재방문
@@ -905,11 +910,12 @@ function endDay() {
   }
   sum.notes.unshift('전기요금 ' + WON(elec) + ' 청구' + (minOfDay() > CLOSE ? ' (야간 연장 영업 포함)' : ''));
   const nd = d + 1;
+  bizEndDay(sum);
   loansDaily(sum, nd % 7 === 0);
   if (nd % 7 === 0) {
     const bizCut = 1 - 0.03 * skillLv('biz');
-    const rent = Math.round(250000 * bizCut), senior = 300000, salary = 200000;
-    pay(rent, '임대료', '주간 임대료'); pay(senior, '직원 급여', '박준호 선임 주급'); pay(salary, '직원 급여', '내 주급');
+    const rent = Math.round(shopLoc().rent * bizCut), senior = 300000, salary = 200000;
+    pay(rent, '임대료', '주간 임대료 (' + shopLoc().name + ')'); pay(senior, '직원 급여', '박준호 선임 주급'); pay(salary, '직원 급여', '내 주급');
     S.savings += salary;
     sum.notes.push('주간 고정비 청구: 임대료 ' + WON(rent) + ', 선임 급여 ' + WON(senior) + ', 내 급여 ' + WON(salary) + ' (내 통장 누적 ' + WON(S.savings) + ')');
     const wk = S.history.slice(-6); const profit = wk.reduce((s, h) => s + h.rev - h.exp, 0) + S.dayLog.rev - S.dayLog.exp;

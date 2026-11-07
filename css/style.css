@@ -302,3 +302,24 @@ body[data-screen="bench"] #toasts { top: calc(var(--hud) + 100px); right: 392px;
   fieldset { grid-template-columns: 1fr; }
   .heat { flex-direction: column; } .thermo { height: 180px; }
 }
+
+/* ---------- v0.2: 투자 · 뉴스 · 리뷰 · 알바 · 부동산 ---------- */
+.icons { grid-template-columns: repeat(2, 86px); grid-auto-rows: min-content; max-height: calc(100% - 70px); overflow-y: auto; }
+.trade-wrap { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.tr-list .tr-row { cursor: pointer; } .tr-list .tr-row:hover { background: #f1f5f9; } .tr-list .tr-row.on { background: #e6f0ff; }
+.tr-list td { vertical-align: middle; } .spark { display: block; max-width: 100%; height: auto; }
+.tr-detail { background: #f8fafc; border: 1px solid #dde3ea; border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.tr-detail h4 { margin: 0 0 4px; } .tr-price b { font-size: 24px; } .tr-chart { margin: 6px 0; } .tr-chart .spark { width: 100%; }
+.tr-buy, .tr-sell { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; } .tr-buy input { flex: 1; min-width: 120px; }
+.kpi b.up, .kpi b.down { font-size: 20px; }
+.news-list { display: flex; flex-direction: column; gap: 8px; } .news-item { border-bottom: 1px solid #e3e8ee; padding: 6px 0; } .news-item b { font-size: 15px; } .news-item .btn { margin-left: 6px; }
+.news-mini { padding-left: 16px; margin: 4px 0; font-size: 13px; }
+.rv-head { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+.rv-score { display: flex; flex-direction: column; align-items: center; } .rv-score b { font-size: 40px; line-height: 1; }
+.rv-dist { flex: 1; min-width: 200px; } .rv-dist div { display: flex; align-items: center; gap: 6px; font-size: 12px; } .rv-dist i { flex: 1; height: 8px; background: #e3e8ee; border-radius: 4px; overflow: hidden; } .rv-dist i b { display: block; height: 100%; background: #f2b632; }
+.rv { border-top: 1px solid #e3e8ee; padding: 8px 0; } .rv p { margin: 4px 0; } .rv .stars { color: #f2b632; }
+.rv-reply { background: #f1f5f9; border-left: 3px solid #3a8fe0; padding: 6px 8px; font-size: 13px; border-radius: 4px; } .rv .row { display: flex; gap: 6px; flex-wrap: wrap; }
+.loan-card.cur { border-color: #2fbf71; box-shadow: 0 0 0 2px #2fbf7133; }
+.chk { display: block; margin: 2px 0; } .chk input { vertical-align: middle; }
+#winB .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+@media (max-width: 760px) { .trade-wrap { grid-template-columns: 1fr; } .tb-apps { overflow-x: auto; } }

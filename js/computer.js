@@ -155,7 +155,7 @@ Computer.app_acct = function (el) {
   el.innerHTML = `<div class="acct-top"><div class="kpi"><span>매장 자금</span><b class="${S.money < 0 ? 'bad' : ''}">${WON(S.money)}</b></div><div class="kpi"><span>오늘 매출</span><b class="ok">${WON(S.dayLog.rev)}</b></div><div class="kpi"><span>오늘 지출</span><b>${WON(S.dayLog.exp)}</b></div><div class="kpi"><span>내 급여 누적</span><b>${WON(S.savings)}</b></div></div>
     <h4>일별 매출(초록)·지출(주황)</h4>${hist.length ? `<svg viewBox="0 0 ${40 + hist.length * 44} 175" class="chart">${bars}<line x1="20" y1="150" x2="${30 + hist.length * 44}" y2="150" stroke="#555"/></svg>` : '<p class="muted">영업을 하루 마감하면 그래프가 표시됩니다.</p>'}
     <h4>항목별 합계</h4><table class="tbl"><tbody>${Object.entries(cats).map(([c, v]) => `<tr><td>${esc(c)}</td><td class="${v >= 0 ? 'ok' : 'bad'}">${WON(v)}</td></tr>`).join('')}</tbody></table>
-    <p class="small muted">고정비: 임대료 주 ₩250,000 · 선임 급여 주 ₩300,000 · 내 급여 주 ₩200,000 · 전기요금 일 ₩6,000~ (7일마다 정산)</p>
+    <p class="small muted">고정비: 임대료 주 ${WON(shopLoc().rent)} (${esc(shopLoc().name)}) · 선임 급여 주 ₩300,000 · 내 급여 주 ₩200,000${albaWages() ? ' · 알바 일급 ' + WON(albaWages()) : ''} · 전기요금 일 ₩6,000~ (7일마다 정산)</p>
     <h4>최근 거래 내역</h4><table class="tbl"><thead><tr><th>일시</th><th>항목</th><th>내용</th><th>금액</th></tr></thead><tbody>${S.ledger.slice(-60).reverse().map(l => `<tr><td>${fmtDT(l.t)}</td><td>${esc(l.cat)}</td><td class="small">${esc(l.memo)}</td><td class="${l.amt >= 0 ? 'ok' : 'bad'}">${WON(l.amt)}</td></tr>`).join('')}</tbody></table>`;
 };
 
@@ -166,7 +166,7 @@ Computer.app_mgmt = function (el) {
     <h4>직원 성장 분야</h4><div class="skills">${Object.entries(SKILLS).map(([k, s]) => { const l = skillLv(k); const a = l * l * 25, b = (l + 1) * (l + 1) * 25; const p = l >= 10 ? 1 : (S.skills[k] - a) / (b - a); return `<div class="skill"><div><b>${s.name}</b> <span>Lv${l}</span></div><i class="xpbar wide"><b style="width:${(p * 100).toFixed(0)}%"></b></i><small>${esc(s.desc)}</small></div>`; }).join('')}</div>
     <h4>취급 기기 단계</h4><table class="tbl"><tbody>${DEVICE_TIERS.map((t, i) => `<tr><td>${i + 1}단계</td><td>${t.devices}</td><td>Lv${t.lv} 해금</td><td>${lv >= t.lv ? (t.implemented ? '<span class="tag ok">취급 중</span>' : '<span class="tag warn">해금됨 · 콘텐츠 준비 중 (현재 버전 미구현)</span>') : '<span class="tag">잠김</span>'}</td></tr>`).join('')}</tbody></table>
     <h4>매장 업그레이드</h4><div class="tool-grid">${Object.entries(UPGRADES).map(([k, u]) => `<div class="tcard ${S.upgrades[k] ? 'owned' : ''}"><h4>${esc(u.name)}</h4><p>${esc(u.desc)}</p>${u.req ? `<p class="small">조건: ${Object.entries(u.req).map(([s, l]) => SKILLS[s].name + ' Lv' + l).join(', ')}</p>` : ''}<p><b>${WON(u.price)}</b></p>${S.upgrades[k] ? '<span class="tag ok">설치됨</span>' : `<button class="btn primary sm" data-up="${k}">구입</button>`}</div>`).join('')}</div>
-    <p class="small muted">※ 직접 수리점을 인수해 대형 수리센터로 키우는 기능은 향후 확장 예정이며 현재 버전에는 구현되어 있지 않습니다.</p>`;
+    <p class="small muted">돈을 모으면 '부동산' 앱에서 더 좋은 매장으로 이사할 수 있습니다. 알바는 '알바' 앱에서 고용합니다.</p>`;
   $$('[data-up]', el).forEach(b => b.onclick = () => { const r = buyUpgrade(b.dataset.up); UI.toast(r.ok ? '🏪' : '❌', r.msg, true); Computer.refresh(); });
 };
 
@@ -176,11 +176,11 @@ Computer.app_sys = function (el) {
     <div class="row"><button class="btn" id="sxSave">💾 지금 저장</button><button class="btn" id="sxExp">⬇ 세이브 내보내기 (.json)</button><label class="btn">⬆ 세이브 가져오기<input type="file" id="sxImp" accept=".json,application/json" hidden></label></div>
     <h4>튜토리얼</h4><div class="row"><button class="btn" id="sxGuide">📘 튜토리얼 가이드 다시 보기</button><button class="btn" id="sxPractice">🧑‍🔧 연습 의뢰 받기 (선임 안내 포함)</button></div>
     <h4>초기화</h4><button class="btn danger" id="sxReset">⚠ 새 게임 시작 (현재 진행 삭제)</button>
-    <h4>구현 범위 안내</h4><ul class="small"><li>구현됨: 스마트폰 3종(노바 X12·픽시스 S3·루멘 A5) 분해·조립·진단, 교과서, 부품몰·배송·재고, 접수·견적·반환, 경제·성장, 저장.</li><li>미구현(향후): 태블릿·노트북 등 2단계 이후 기기, 직원 고용, 수리점 인수·확장.</li></ul>`;
+    <h4>구현 범위 안내</h4><ul class="small"><li>구현됨: 스마트폰 4종(노바 X12·픽시스 S3·루멘 A5·오르빗 M7)과 게임 컨트롤러(케스트렐 G1) 분해·조립·진단, 교과서, 부품몰·배송·재고, 접수·견적·반환, 리뷰, 알바(자동 구매·택배 정리·손님 응대), 대출, 가상 주식·코인·뉴스, 매장 이전, 경제·성장, 저장.</li><li>미구현(향후): 태블릿·노트북 등 2단계 이후 기기, 수리 기사 고용(알바는 수리를 하지 않음).</li></ul>`;
   $('#sxSave', el).onclick = () => { save(); UI.toast('💾', '저장했습니다.'); };
   $('#sxExp', el).onclick = () => { const blob = new Blob([exportSave()], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'repair-master-save-day' + (dayIdx() + 1) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
   $('#sxImp', el).onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { try { importSave(t); UI.toast('✅', '세이브를 불러왔습니다.'); UI.show('shop'); TUT.render(); } catch (err) { UI.alert('불러오기 실패', err.message); } }); };
   $('#sxGuide', el).onclick = () => TUT.guide();
   $('#sxPractice', el).onclick = () => TUT.practice();
-  $('#sxReset', el).onclick = () => UI.choice('새 게임', '정말 현재 진행 상황을 지우고 새로 시작할까요?', [['새로 시작', () => { localStorage.removeItem(SAVE_KEY); newGame(); UI.show('shop'); TUT.render(); }], ['취소', () => { }]]);
+  $('#sxReset', el).onclick = () => UI.restartGame();
 };

@@ -843,9 +843,9 @@ const NAMES = ['김민지', '이도윤', '박서연', '최준우', '정하은', 
 
 /* 부품 판매업체 */
 const VENDORS = {
-  cheap: { id: 'cheap', name: '싸다파츠', tag: '저가형', mult: 0.68, ship: 2500, days: [3, 5], defect: 0.15, grade: 'B', failLater: 0.12, color: '#e0703a', desc: '가격이 저렴하지만 배송이 느리고 품질 편차가 있음' },
-  normal: { id: 'normal', name: '부품나라', tag: '일반', mult: 1.0, ship: 3000, days: [2, 3], defect: 0.04, grade: 'A', failLater: 0.03, color: '#3a8fe0', desc: '적당한 가격, 평균 배송, 비교적 안정적인 품질' },
-  premium: { id: 'premium', name: '프로파츠', tag: '프리미엄', mult: 1.38, ship: 4000, days: [1, 2], defect: 0.01, grade: 'A+', failLater: 0.005, color: '#8a5ae0', express: 9000, desc: '높은 가격, 품질이 높고 당일 특급 배송 가능' }
+  cheap: { id: 'cheap', name: '싸다파츠', tag: '저가형', mult: 0.68, ship: 2500, days: [1, 2], defect: 0.15, grade: 'B', failLater: 0.12, color: '#e0703a', desc: '가격이 저렴하지만 품질 편차가 있음' },
+  normal: { id: 'normal', name: '부품나라', tag: '일반', mult: 1.0, ship: 3000, days: [1, 2], defect: 0.04, grade: 'A', failLater: 0.03, color: '#3a8fe0', desc: '적당한 가격, 비교적 안정적인 품질' },
+  premium: { id: 'premium', name: '프로파츠', tag: '프리미엄', mult: 1.38, ship: 4000, days: [1, 2], defect: 0.01, grade: 'A+', failLater: 0.005, color: '#8a5ae0', express: 9000, desc: '높은 가격, 품질이 높고 당일 특급 배송 가능 (15시 전 주문 시 3시간 뒤 도착)' }
 };
 
 /* 수리 도구 */

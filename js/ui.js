@@ -120,7 +120,7 @@ UI.renderScene = function () {
   const night = m >= CLOSE;
   const q = S.queue.slice(0, 3); const pk = S.packages.length; const active = S.tickets.length; const benchTk = benchTicket();
   let s = `<defs>
-    <linearGradient id="sWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b4048"/><stop offset="1" stop-color="#4c535c"/></linearGradient>
+    <linearGradient id="sWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${shopLoc().wall[0]}"/><stop offset="1" stop-color="${shopLoc().wall[1]}"/></linearGradient>
     <linearGradient id="sWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a5a35"/><stop offset="1" stop-color="#5e3a20"/></linearGradient>
     <linearGradient id="sFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d5038"/><stop offset="1" stop-color="#3b2a1e"/></linearGradient>
     <linearGradient id="sSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${night ? '#0b1230' : '#8ec5ef'}"/><stop offset="1" stop-color="${night ? '#2a2a55' : '#dcefff'}"/></linearGradient>
@@ -141,7 +141,7 @@ UI.renderScene = function () {
     <circle cx="248" cy="186" r="9" fill="#e6c15a"/></g>`;
   // 쇼윈도
   s += `<g><rect x="280" y="150" width="270" height="250" fill="#1a1d21"/><rect x="290" y="160" width="250" height="230" fill="url(#sSky)"/><path d="M290 390 V300 h40 v-40 h50 v60 h30 v-80 h60 v100 h40 v-30 h30 V390Z" fill="${night ? '#111526' : '#9fb3c8'}" opacity=".9"/>${night ? Array.from({ length: 12 }, (_, i) => `<rect x="${300 + (i * 37) % 230}" y="${310 + (i * 23) % 70}" width="6" height="8" fill="#ffd86b"/>`).join('') : ''}
-    <text x="415" y="200" font-size="26" fill="#ffd86b" text-anchor="middle" font-weight="900" opacity=".9" letter-spacing="2">REPAIR MASTER</text><text x="415" y="226" font-size="15" fill="#fff" text-anchor="middle" opacity=".85">전자기기 사설 수리점</text></g>`;
+    <text x="415" y="200" font-size="26" fill="#ffd86b" text-anchor="middle" font-weight="900" opacity=".9" letter-spacing="2">REPAIR MASTER</text><text x="415" y="226" font-size="15" fill="#fff" text-anchor="middle" opacity=".85">${esc(shopLoc().name)}</text></g>`;
   // 벽시계 (게임 시간)
   const ha = (hh + mm / 60) * 30, ma = mm * 6;
   s += `<g transform="translate(640 110)"><circle r="40" fill="#f7f3ea" stroke="#3a3a3a" stroke-width="5"/>${Array.from({ length: 12 }, (_, i) => `<line x1="0" y1="-33" x2="0" y2="-28" stroke="#333" stroke-width="3" transform="rotate(${i * 30})"/>`).join('')}<line x1="0" y1="0" x2="0" y2="-20" stroke="#222" stroke-width="5" stroke-linecap="round" transform="rotate(${ha})"/><line x1="0" y1="0" x2="0" y2="-30" stroke="#222" stroke-width="3" stroke-linecap="round" transform="rotate(${ma})"/><circle r="4" fill="#c33"/></g>`;
@@ -466,4 +466,13 @@ UI.pullTab = function (cb) {
     }, 50);
     $('#tCancel', b).onclick = () => finish(false);
   }, { size: 'md', noClose: true });
+};
+
+/* 새로 시작 (현재 진행 삭제) */
+UI.restartGame = function () {
+  UI.choice('🔄 새로 시작', '정말 지금까지의 진행(돈·재고·의뢰·기록)을 모두 지우고 처음부터 새로 시작할까요? 되돌릴 수 없습니다. 필요하면 먼저 컴퓨터 → 설정에서 세이브를 내보내 두세요.', [['새로 시작', () => {
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
+    WB.dev = null; WB.tk = null; Computer.app = null;
+    newGame(); UI.show('shop'); TUT.render(true); UI.hud(); UI.toast('🔄', '새 게임을 시작했습니다. 1일차 아침입니다.');
+  }], ['취소', () => { }]]);
 };

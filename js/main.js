@@ -33,9 +33,9 @@ function boot() {
     if (minOfDay() >= CLOSE && !S.flags.closeWarn) { S.flags.closeWarn = dayIdx(); UI.toast('🌙', '영업 시간(19:00)이 지났습니다. 출입문이나 🌙 버튼으로 영업을 마감하세요.', true); }
   };
   $('#btnEnd').onclick = () => UI.endDayFlow();
-  $('#btnMenu').onclick = () => UI.modal('메뉴', `<div class="menu-grid"><button class="btn" data-m="save">💾 저장</button><button class="btn" data-m="pc">🖥 컴퓨터 (설정·저장 관리)</button><button class="btn" data-m="guide">📘 튜토리얼 가이드</button><button class="btn" data-m="book">📖 교과서</button><button class="btn" data-m="shop">🏠 수리점으로</button></div>
-      <p class="small muted">REPAIR MASTER v0.1 — 스마트폰 3종 수리가 완전히 구현된 초기 플레이 버전입니다.</p>`, (b, w) => {
-    $$('[data-m]', b).forEach(x => x.onclick = () => { UI.closeModal(w); const m = x.dataset.m; if (m === 'save') { save(); UI.toast('💾', '저장했습니다.'); } if (m === 'pc') Computer.open('sys'); if (m === 'guide') TUT.guide(); if (m === 'book') UI.openBook(); if (m === 'shop') UI.show('shop'); });
+  $('#btnMenu').onclick = () => UI.modal('메뉴', `<div class="menu-grid"><button class="btn" data-m="save">💾 저장</button><button class="btn" data-m="pc">🖥 컴퓨터 (설정·저장 관리)</button><button class="btn" data-m="guide">📘 튜토리얼 가이드</button><button class="btn" data-m="book">📖 교과서</button><button class="btn" data-m="shop">🏠 수리점으로</button><button class="btn danger" data-m="reset">🔄 새로 시작</button></div>
+      <p class="small muted">REPAIR MASTER v0.2 — 스마트폰 4종 · 게임 컨트롤러 1종 수리, 리뷰 · 알바 · 대출 · 가상 투자 · 매장 이전.</p>`, (b, w) => {
+    $$('[data-m]', b).forEach(x => x.onclick = () => { UI.closeModal(w); const m = x.dataset.m; if (m === 'save') { save(); UI.toast('💾', '저장했습니다.'); } if (m === 'pc') Computer.open('sys'); if (m === 'guide') TUT.guide(); if (m === 'book') UI.openBook(); if (m === 'shop') UI.show('shop'); if (m === 'reset') UI.restartGame(); });
   }, { size: 'sm' });
   $('#hudAlerts').addEventListener('click', e => { const a = e.target.closest('[data-go]'); if (!a) return; const g = a.dataset.go; if (g === 'counter') UI.openCounter(); if (g === 'packages') UI.openPackages(); if (g === 'inv') Computer.open('inv'); });
   window.addEventListener('beforeunload', save);

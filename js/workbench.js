@@ -482,7 +482,7 @@ function initBenchInput() {
     try { svg.setPointerCapture(e.pointerId); } catch (err) { } ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ptrs.size === 2) { if (start && start.hold && !start.hold.done) start.hold.cancel(); const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), vb: { ...WB.vb } }; start = null; return; }
     const tgt = e.target.closest('[data-kind]');
-    start = { x: e.clientX, y: e.clientY, vb: { ...WB.vb }, kind: tgt && tgt.dataset.kind, id: tgt && tgt.dataset.id, moved: false, cutting: WB.tool === 'pick' && $('#devSvg .seg:not(.cut)').length > 0 };
+    start = { x: e.clientX, y: e.clientY, vb: { ...WB.vb }, kind: tgt && tgt.dataset.kind, id: tgt && tgt.dataset.id, moved: false, cutting: WB.tool === 'pick' && $$('#devSvg .seg:not(.cut)').length > 0 };
     if (start.kind === 'screw' && WB.tool === 'driver' && toolUsable('driver')) start.hold = WB.holdScrew(start.id, tgt);
   });
   svg.addEventListener('pointermove', e => {
