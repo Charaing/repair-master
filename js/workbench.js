@@ -430,14 +430,10 @@ WB.qc = function () {
   addXP('diag', 3); WB.render(); Bus.emit('act', { type: 'qc', pass: r.pass });
 };
 WB.flip = function () {
-  const dev = WB.dev; if (WB.flipping) return; WB.flipping = true;
-  const st = $('#stage'); st.classList.add('flip-out');
-  setTimeout(() => {
-    dev.view = dev.view === 'bottom' ? (WB.faceView || MODELS[dev.modelId].openSide) : dev.view === 'back' ? 'front' : 'back'; WB.selected = null; WB.vb = null; WB.render();
-    st.classList.remove('flip-out'); st.classList.add('flip-in');
-    setTimeout(() => { st.classList.remove('flip-in'); WB.flipping = false; }, 260);
-    Bus.emit('act', { type: 'flip' });
-  }, 240);
+  // 애니메이션 없이 바로 뒤집는다
+  const dev = WB.dev; if (!dev) return;
+  dev.view = dev.view === 'bottom' ? (WB.faceView || MODELS[dev.modelId].openSide) : dev.view === 'back' ? 'front' : 'back'; WB.selected = null; WB.vb = null; WB.render();
+  Bus.emit('act', { type: 'flip' });
 };
 WB.toEdge = function () {
   const dev = WB.dev; if (WB.flipping) return; WB.flipping = true;

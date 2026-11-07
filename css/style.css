@@ -67,10 +67,8 @@ h1, h2, h3, h4 { margin: .6em 0 .4em; }
 .tool .dur { position: absolute; left: 8px; right: 8px; bottom: 3px; height: 3px; background: #0006; border-radius: 2px; } .tool .dur::after { content: ''; position: absolute; inset: 0; width: calc(var(--d) * 100%); background: var(--ok); border-radius: 2px; }
 #stage, #stage *, #bench .bench-side, .tray-item, .screwmat { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 .label-zoom { margin: 8px 0 0; text-align: center; background: #0e2a27; border-radius: 10px; padding: 6px; } .label-zoom .dev-prev { max-height: 110px; } .label-zoom figcaption { font-size: 12px; color: var(--muted); }
-#stage { position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #237a72, #124943 70%, #0c2f2b); touch-action: none; transition: transform .24s ease; }
+#stage { position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #237a72, #124943 70%, #0c2f2b); touch-action: none; }
 #stage .mat { position: absolute; inset: 0; background-image: linear-gradient(#ffffff10 1px, transparent 1px), linear-gradient(90deg, #ffffff10 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
-#stage.flip-out { transform: perspective(900px) rotateY(90deg); } #stage.flip-in { animation: flipIn .26s ease; }
-@keyframes flipIn { from { transform: perspective(900px) rotateY(-90deg); } to { transform: none; } }
 #stage.tilt-out { transform: perspective(900px) rotateX(-80deg); } #stage.tilt-in { animation: tiltIn .26s ease; }
 @keyframes tiltIn { from { transform: perspective(900px) rotateX(80deg); } to { transform: none; } }
 .stage-ctrl .btn.on { background: linear-gradient(#ffc463, #f39a1f); color: #2a1800; }
